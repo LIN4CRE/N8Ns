@@ -9,7 +9,7 @@ import {
   ANALYTICS_WORKFLOW,
   UNIFIED_MASTER_WORKFLOW
 } from './data/n8nWorkflows';
-import { N8NWorkflowDefinition, N8NNode, ScheduledPostItem } from './types/workflow';
+import { N8NWorkflowDefinition, N8NNode, ScheduledPostItem, WorkflowSnapshot } from './types/workflow';
 import { Header } from './components/Header';
 import { WorkflowCanvas } from './components/WorkflowCanvas';
 import { NodeDetailDrawer } from './components/NodeDetailDrawer';
@@ -24,10 +24,38 @@ export default function App() {
     'canvas' | 'simulator' | 'analytics' | 'endpoints' | 'scheduler'
   >('canvas');
 
+  // Mutable workflows dictionary
+  const [workflows, setWorkflows] = useState<Record<string, N8NWorkflowDefinition>>({
+    wf_omnichannel_distribution_v1: JSON.parse(JSON.stringify(DISTRIBUTION_WORKFLOW)),
+    wf_omnichannel_analytics_v1: JSON.parse(JSON.stringify(ANALYTICS_WORKFLOW)),
+    wf_omnichannel_master_v1: JSON.parse(JSON.stringify(UNIFIED_MASTER_WORKFLOW)),
+  });
+
   const [currentWorkflowId, setCurrentWorkflowId] = useState<string>(
     'wf_omnichannel_distribution_v1'
   );
   const [selectedNode, setSelectedNode] = useState<N8NNode | null>(null);
+
+  // Workflow Snapshots State
+  const [snapshots, setSnapshots] = useState<WorkflowSnapshot[]>([
+    {
+      id: 'snap_baseline_01',
+      name: 'v1.0 - Production Baseline (zie619)',
+      timestamp: 'Today at 9:00 AM EST',
+      note: 'Initial verified distribution pipeline with 8s TikTok wait and Meta Reels container polling.',
+      workflow: JSON.parse(JSON.stringify(DISTRIBUTION_WORKFLOW)),
+      nodeCount: DISTRIBUTION_WORKFLOW.nodes.length,
+    },
+    {
+      id: 'snap_optimized_02',
+      name: 'v1.1 - Added Polling Resiliency & Tags',
+      timestamp: 'Today at 11:30 AM EST',
+      note: 'Extended wait duration to 15s for Instagram container transcoding and added YouTube category 22 tags.',
+      workflow: JSON.parse(JSON.stringify(DISTRIBUTION_WORKFLOW)),
+      nodeCount: DISTRIBUTION_WORKFLOW.nodes.length,
+    },
+  ]);
+  const [activeSnapshotId, setActiveSnapshotId] = useState<string | null>('snap_baseline_01');
 
   // Modals state
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
@@ -51,20 +79,60 @@ export default function App() {
     },
   ];
 
-  const getCurrentWorkflow = (): N8NWorkflowDefinition => {
-    switch (currentWorkflowId) {
-      case 'wf_omnichannel_analytics_v1':
-        return ANALYTICS_WORKFLOW;
-      case 'wf_omnichannel_master_v1':
-        return UNIFIED_MASTER_WORKFLOW;
-      default:
-        return DISTRIBUTION_WORKFLOW;
-    }
-  };
+  const currentWorkflow = workflows[currentWorkflowId] || workflows['wf_omnichannel_distribution_v1'];
 
   const handleSelectWorkflow = (id: string) => {
     setCurrentWorkflowId(id);
     setSelectedNode(null);
+  };
+
+  const handleSaveSnapshot = (name: string, note: string) => {
+    const newSnapshot: WorkflowSnapshot = {
+      id: 'snap_' + Date.now().toString().slice(-6),
+      name,
+      timestamp: new Date().toLocaleTimeString() + ' (Just now)',
+      note,
+      workflow: JSON.parse(JSON.stringify(currentWorkflow)),
+      nodeCount: currentWorkflow.nodes.length,
+    };
+    setSnapshots([newSnapshot, ...snapshots]);
+    setActiveSnapshotId(newSnapshot.id);
+  };
+
+  const handleRevertSnapshot = (snapshot: WorkflowSnapshot) => {
+    setWorkflows((prev) => ({
+      ...prev,
+      [currentWorkflowId]: JSON.parse(JSON.stringify(snapshot.workflow)),
+    }));
+    setActiveSnapshotId(snapshot.id);
+    setSelectedNode(null);
+  };
+
+  const handleDeleteSnapshot = (id: string) => {
+    setSnapshots(snapshots.filter((s) => s.id !== id));
+    if (activeSnapshotId === id) {
+      setActiveSnapshotId(null);
+    }
+  };
+
+  const handleUpdateNode = (updatedNode: N8NNode) => {
+    setWorkflows((prev) => {
+      const activeWf = prev[currentWorkflowId];
+      if (!activeWf) return prev;
+
+      const updatedNodes = activeWf.nodes.map((n) =>
+        n.id === updatedNode.id ? updatedNode : n
+      );
+
+      return {
+        ...prev,
+        [currentWorkflowId]: {
+          ...activeWf,
+          nodes: updatedNodes,
+        },
+      };
+    });
+    setSelectedNode(updatedNode);
   };
 
   const handleSimulatePost = (post: ScheduledPostItem) => {
@@ -85,13 +153,18 @@ export default function App() {
       <main className="flex-1 overflow-hidden relative flex">
         {activeTab === 'canvas' && (
           <WorkflowCanvas
-            currentWorkflow={getCurrentWorkflow()}
+            currentWorkflow={currentWorkflow}
             onSelectWorkflow={handleSelectWorkflow}
             availableWorkflows={availableWorkflows}
             onSelectNode={(node) => setSelectedNode(node)}
             selectedNode={selectedNode}
             onSimulate={() => setIsSimulatorModalOpen(true)}
             onExport={() => setIsExportModalOpen(true)}
+            snapshots={snapshots}
+            activeSnapshotId={activeSnapshotId}
+            onSaveSnapshot={handleSaveSnapshot}
+            onRevertSnapshot={handleRevertSnapshot}
+            onDeleteSnapshot={handleDeleteSnapshot}
           />
         )}
 
@@ -128,6 +201,7 @@ export default function App() {
           <NodeDetailDrawer
             node={selectedNode}
             onClose={() => setSelectedNode(null)}
+            onUpdateNode={handleUpdateNode}
           />
         )}
       </main>

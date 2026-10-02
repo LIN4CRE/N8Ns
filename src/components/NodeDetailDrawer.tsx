@@ -5,13 +5,51 @@ import { X, Copy, Check, Terminal, FileCode, Sliders, ExternalLink } from 'lucid
 interface NodeDetailDrawerProps {
   node: N8NNode | null;
   onClose: () => void;
+  onUpdateNode?: (updatedNode: N8NNode) => void;
 }
 
-export const NodeDetailDrawer: React.FC<NodeDetailDrawerProps> = ({ node, onClose }) => {
+export const NodeDetailDrawer: React.FC<NodeDetailDrawerProps> = ({
+  node,
+  onClose,
+  onUpdateNode,
+}) => {
   const [copied, setCopied] = useState(false);
   const [activeTab, setActiveTab] = useState<'parameters' | 'json' | 'curl'>('parameters');
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedName, setEditedName] = useState(node?.name || '');
+  const [editedUrl, setEditedUrl] = useState(node?.parameters?.url || '');
+  const [editedWaitAmount, setEditedWaitAmount] = useState(node?.parameters?.amount || 10);
+  const [savedSuccess, setSavedSuccess] = useState(false);
+
+  // Sync state if node changes
+  React.useEffect(() => {
+    if (node) {
+      setEditedName(node.name);
+      setEditedUrl(node.parameters?.url || '');
+      setEditedWaitAmount(node.parameters?.amount || 10);
+      setIsEditing(false);
+      setSavedSuccess(false);
+    }
+  }, [node]);
 
   if (!node) return null;
+
+  const handleSaveNodeChanges = () => {
+    if (!onUpdateNode) return;
+    const updated: N8NNode = {
+      ...node,
+      name: editedName.trim() || node.name,
+      parameters: {
+        ...node.parameters,
+        ...(node.parameters.url !== undefined ? { url: editedUrl } : {}),
+        ...(node.parameters.amount !== undefined ? { amount: Number(editedWaitAmount) } : {}),
+      },
+    };
+    onUpdateNode(updated);
+    setSavedSuccess(true);
+    setTimeout(() => setSavedSuccess(false), 2000);
+    setIsEditing(false);
+  };
 
   const handleCopyJSON = () => {
     navigator.clipboard.writeText(JSON.stringify(node, null, 2));
@@ -104,6 +142,80 @@ export const NodeDetailDrawer: React.FC<NodeDetailDrawerProps> = ({ node, onClos
 
         {activeTab === 'parameters' && (
           <div className="space-y-4">
+            {/* Quick Edit Toggle */}
+            <div className="flex items-center justify-between p-2.5 bg-slate-900/90 rounded-lg border border-slate-800 text-xs">
+              <span className="text-slate-300 font-medium">Node Configuration Mode:</span>
+              <button
+                onClick={() => setIsEditing(!isEditing)}
+                className={`px-2.5 py-1 rounded text-xs font-semibold transition-colors cursor-pointer ${
+                  isEditing
+                    ? 'bg-rose-600 text-white'
+                    : 'bg-slate-800 text-slate-300 hover:text-white'
+                }`}
+              >
+                {isEditing ? 'Editing Mode' : 'Edit Node'}
+              </button>
+            </div>
+
+            {savedSuccess && (
+              <div className="p-2.5 bg-emerald-950/40 border border-emerald-500/40 rounded-lg text-xs text-emerald-300 flex items-center gap-2">
+                <Check className="w-3.5 h-3.5 text-emerald-400" />
+                <span>Node configuration saved to active workflow!</span>
+              </div>
+            )}
+
+            {isEditing && (
+              <div className="p-3 bg-slate-900 border border-rose-500/40 rounded-lg space-y-3">
+                <div>
+                  <label className="text-[11px] font-mono uppercase tracking-wider text-slate-400 block mb-1">
+                    Node Display Name
+                  </label>
+                  <input
+                    type="text"
+                    value={editedName}
+                    onChange={(e) => setEditedName(e.target.value)}
+                    className="w-full bg-slate-950 border border-slate-800 rounded px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-rose-500"
+                  />
+                </div>
+
+                {node.parameters.url !== undefined && (
+                  <div>
+                    <label className="text-[11px] font-mono uppercase tracking-wider text-slate-400 block mb-1">
+                      Endpoint URL
+                    </label>
+                    <input
+                      type="text"
+                      value={editedUrl}
+                      onChange={(e) => setEditedUrl(e.target.value)}
+                      className="w-full bg-slate-950 border border-slate-800 rounded px-2.5 py-1.5 text-xs text-white font-mono focus:outline-none focus:border-rose-500"
+                    />
+                  </div>
+                )}
+
+                {node.parameters.amount !== undefined && (
+                  <div>
+                    <label className="text-[11px] font-mono uppercase tracking-wider text-slate-400 block mb-1">
+                      Wait Duration ({node.parameters.unit || 'seconds'})
+                    </label>
+                    <input
+                      type="number"
+                      value={editedWaitAmount}
+                      onChange={(e) => setEditedWaitAmount(Number(e.target.value))}
+                      className="w-full bg-slate-950 border border-slate-800 rounded px-2.5 py-1.5 text-xs text-white font-mono focus:outline-none focus:border-rose-500"
+                    />
+                  </div>
+                )}
+
+                <button
+                  onClick={handleSaveNodeChanges}
+                  className="w-full py-1.5 text-xs font-semibold text-white bg-rose-600 hover:bg-rose-500 rounded transition-colors flex items-center justify-center gap-1.5 cursor-pointer shadow-sm"
+                >
+                  <Check className="w-3.5 h-3.5" />
+                  <span>Apply Node Changes</span>
+                </button>
+              </div>
+            )}
+
             {node.parameters.method && (
               <div>
                 <label className="text-[11px] font-mono uppercase tracking-wider text-slate-400 block mb-1">

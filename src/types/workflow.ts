@@ -92,3 +92,52 @@ export interface SimulationStep {
   outputSummary?: string;
   payload?: any;
 }
+
+export interface ExecutionLogPlatformStatus {
+  platform: 'tiktok' | 'youtube' | 'instagram' | 'storage' | 'discord';
+  status: 'SUCCESS' | 'FAILED' | 'SKIPPED' | 'RATE_LIMITED';
+  id?: string;
+  httpCode?: number;
+  message?: string;
+  retryAttempt?: number;
+}
+
+export interface ExecutionLogItem {
+  id: string;
+  executionId: string;
+  workflowName: string;
+  workflowId: string;
+  triggerType: 'Schedule Trigger' | 'Webhook' | 'Manual Test';
+  status: 'SUCCESS' | 'WARNING' | 'ERROR';
+  startTime: string;
+  durationMs: number;
+  postTitle?: string;
+  platforms: ExecutionLogPlatformStatus[];
+  errorMessage?: string;
+  errorNode?: string;
+  nodesExecutedCount: number;
+  outputPayloadSummary?: string;
+}
+
+export interface ApiRateLimitStatus {
+  platform: 'TikTok' | 'YouTube' | 'Instagram';
+  endpointGroup: string;
+  quotaUsed: number;
+  quotaLimit: number;
+  unit: string;
+  resetIn: string;
+  status: 'healthy' | 'warning' | 'critical';
+  description: string;
+  recommendation: string;
+  costPerAction: string;
+}
+
+export interface WorkflowSnapshot {
+  id: string;
+  timestamp: string;
+  name: string;
+  note?: string;
+  workflow: N8NWorkflowDefinition;
+  nodeCount: number;
+}
+

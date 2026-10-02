@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
-import { N8NWorkflowDefinition, N8NNode, PlatformType } from '../types/workflow';
+import { N8NWorkflowDefinition, N8NNode, PlatformType, WorkflowSnapshot } from '../types/workflow';
+import { SnapshotManagerModal } from './SnapshotManagerModal';
 import {
   Play,
   Clock,
@@ -15,7 +16,10 @@ import {
   Copy,
   ExternalLink,
   ChevronRight,
-  Database
+  Database,
+  History,
+  Camera,
+  RotateCcw
 } from 'lucide-react';
 
 interface WorkflowCanvasProps {
@@ -26,6 +30,11 @@ interface WorkflowCanvasProps {
   selectedNode: N8NNode | null;
   onSimulate: () => void;
   onExport: () => void;
+  snapshots: WorkflowSnapshot[];
+  activeSnapshotId: string | null;
+  onSaveSnapshot: (name: string, note: string) => void;
+  onRevertSnapshot: (snapshot: WorkflowSnapshot) => void;
+  onDeleteSnapshot: (id: string) => void;
 }
 
 export const WorkflowCanvas: React.FC<WorkflowCanvasProps> = ({
@@ -36,12 +45,26 @@ export const WorkflowCanvas: React.FC<WorkflowCanvasProps> = ({
   selectedNode,
   onSimulate,
   onExport,
+  snapshots,
+  activeSnapshotId,
+  onSaveSnapshot,
+  onRevertSnapshot,
+  onDeleteSnapshot,
 }) => {
   const [zoom, setZoom] = useState(0.85);
   const [pan, setPan] = useState({ x: 40, y: 30 });
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const [platformFilter, setPlatformFilter] = useState<PlatformType | 'all'>('all');
+  const [isSnapshotModalOpen, setIsSnapshotModalOpen] = useState(false);
+  const [quickSnapshotSuccess, setQuickSnapshotSuccess] = useState(false);
+
+  const handleQuickSnapshot = () => {
+    const timestampStr = new Date().toLocaleTimeString();
+    onSaveSnapshot(`Snapshot at ${timestampStr}`, 'Quick checkpoint from canvas toolbar');
+    setQuickSnapshotSuccess(true);
+    setTimeout(() => setQuickSnapshotSuccess(false), 2000);
+  };
 
   const nodes = currentWorkflow.nodes;
 
@@ -196,7 +219,7 @@ export const WorkflowCanvas: React.FC<WorkflowCanvasProps> = ({
           <div className="flex items-center gap-1 bg-slate-900 p-1 rounded-lg border border-slate-800">
             <button
               onClick={() => setZoom((z) => Math.max(0.4, z - 0.1))}
-              className="p-1.5 text-slate-400 hover:text-white rounded hover:bg-slate-800 transition-colors"
+              className="p-1.5 text-slate-400 hover:text-white rounded hover:bg-slate-800 transition-colors cursor-pointer"
               title="Zoom out"
             >
               <ZoomOut className="w-3.5 h-3.5" />
@@ -206,7 +229,7 @@ export const WorkflowCanvas: React.FC<WorkflowCanvasProps> = ({
             </span>
             <button
               onClick={() => setZoom((z) => Math.min(1.5, z + 0.1))}
-              className="p-1.5 text-slate-400 hover:text-white rounded hover:bg-slate-800 transition-colors"
+              className="p-1.5 text-slate-400 hover:text-white rounded hover:bg-slate-800 transition-colors cursor-pointer"
               title="Zoom in"
             >
               <ZoomIn className="w-3.5 h-3.5" />
@@ -216,10 +239,37 @@ export const WorkflowCanvas: React.FC<WorkflowCanvasProps> = ({
                 setZoom(0.85);
                 setPan({ x: 40, y: 30 });
               }}
-              className="p-1.5 text-slate-400 hover:text-white rounded hover:bg-slate-800 transition-colors"
+              className="p-1.5 text-slate-400 hover:text-white rounded hover:bg-slate-800 transition-colors cursor-pointer"
               title="Reset view"
             >
               <Maximize2 className="w-3.5 h-3.5" />
+            </button>
+          </div>
+
+          {/* Snapshot Checkpoint Controls */}
+          <div className="flex items-center gap-1.5">
+            <button
+              onClick={() => setIsSnapshotModalOpen(true)}
+              className="px-2.5 py-1.5 text-xs rounded-lg border border-slate-800 bg-slate-900/90 hover:bg-slate-800 text-sky-400 hover:text-sky-300 transition-colors flex items-center gap-1.5 cursor-pointer shadow-sm"
+              title="Manage workflow snapshots & revert"
+            >
+              <History className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Snapshots</span>
+              <span className="font-mono text-[10px] bg-sky-500/20 text-sky-300 px-1.5 py-0.2 rounded">
+                {snapshots.length}
+              </span>
+            </button>
+
+            <button
+              onClick={handleQuickSnapshot}
+              className="p-1.5 text-xs rounded-lg border border-slate-800 bg-slate-900/90 hover:bg-slate-800 text-slate-300 hover:text-white transition-colors cursor-pointer"
+              title="Save current state as quick snapshot"
+            >
+              {quickSnapshotSuccess ? (
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+              ) : (
+                <Camera className="w-3.5 h-3.5 text-slate-400 hover:text-white" />
+              )}
             </button>
           </div>
         </div>
@@ -393,6 +443,18 @@ export const WorkflowCanvas: React.FC<WorkflowCanvasProps> = ({
           </div>
         </div>
       </div>
+
+      {/* Snapshot Manager Modal */}
+      <SnapshotManagerModal
+        isOpen={isSnapshotModalOpen}
+        onClose={() => setIsSnapshotModalOpen(false)}
+        snapshots={snapshots}
+        activeSnapshotId={activeSnapshotId}
+        onSaveSnapshot={onSaveSnapshot}
+        onRevertSnapshot={onRevertSnapshot}
+        onDeleteSnapshot={onDeleteSnapshot}
+        currentWorkflow={currentWorkflow}
+      />
     </div>
   );
 };
