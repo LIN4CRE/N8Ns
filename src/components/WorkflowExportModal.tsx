@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import {
   DISTRIBUTION_WORKFLOW,
   ANALYTICS_WORKFLOW,
-  UNIFIED_MASTER_WORKFLOW
+  UNIFIED_MASTER_WORKFLOW,
+  ERROR_HANDLER_WORKFLOW
 } from '../data/n8nWorkflows';
 import { N8NWorkflowDefinition } from '../types/workflow';
 import {
@@ -37,6 +38,8 @@ export const WorkflowExportModal: React.FC<WorkflowExportModalProps> = ({
     currentWf = ANALYTICS_WORKFLOW;
   } else if (selectedWorkflowId === 'wf_omnichannel_master_v1') {
     currentWf = UNIFIED_MASTER_WORKFLOW;
+  } else if (selectedWorkflowId === 'wf_omnichannel_error_handler_v1') {
+    currentWf = ERROR_HANDLER_WORKFLOW;
   }
 
   const jsonString = JSON.stringify(currentWf, null, 2);
@@ -118,6 +121,16 @@ export const WorkflowExportModal: React.FC<WorkflowExportModalProps> = ({
                 }`}
               >
                 Master Full Loop
+              </button>
+              <button
+                onClick={() => setSelectedWorkflowId('wf_omnichannel_error_handler_v1')}
+                className={`px-3 py-1 text-xs rounded transition-colors cursor-pointer ${
+                  selectedWorkflowId === 'wf_omnichannel_error_handler_v1'
+                    ? 'bg-rose-600 text-white font-semibold'
+                    : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                Error Recovery Hook
               </button>
             </div>
           </div>

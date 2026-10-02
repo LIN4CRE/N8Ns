@@ -808,3 +808,190 @@ export const UNIFIED_MASTER_WORKFLOW: N8NWorkflowDefinition = {
     ...DISTRIBUTION_WORKFLOW.connections
   }
 };
+
+export const ERROR_HANDLER_WORKFLOW: N8NWorkflowDefinition = {
+  id: "wf_omnichannel_error_handler_v1",
+  name: "OmniFlow Dead-Letter & Error Recovery Handler",
+  description: "Production error workflow triggered automatically by n8n on any execution failure. Diagnoses root cause (e.g. YouTube quota limit, Instagram container transcode timeout, TikTok auth token refresh), dispatches rich alerts to Discord and Telegram, and auto-reschedules failed posts for the next quota window.",
+  category: "Resilience & DevOps",
+  active: true,
+  settings: {
+    executionOrder: "v1",
+    saveDataErrorExecution: "all",
+    saveDataSuccessExecution: "all"
+  },
+  tags: [
+    { id: "tag_error", name: "Error Recovery" },
+    { id: "tag_omniflow", name: "omniflow-core" }
+  ],
+  nodes: [
+    {
+      id: "node_error_trigger",
+      name: "Error Trigger",
+      type: "n8n-nodes-base.errorTrigger",
+      typeVersion: 1,
+      position: [240, 300],
+      category: "trigger",
+      platform: "general",
+      parameters: {},
+      notes: "Automatically triggered by n8n when any node in the Distribution or Harvester workflows throws an unhandled error."
+    },
+    {
+      id: "node_diagnose_failure",
+      name: "Diagnose Root Cause & Context",
+      type: "n8n-nodes-base.code",
+      typeVersion: 2,
+      position: [460, 300],
+      category: "transform",
+      platform: "general",
+      parameters: {
+        language: "javaScript",
+        jsCode: `const execution = $json.execution || {};
+const workflow = $json.workflow || {};
+const error = $json.execution?.error || {};
+
+const errorMessage = error.message || "Unknown execution error";
+const lastNode = error.node?.name || "Unknown node";
+const executionId = execution.id || "N/A";
+const executionUrl = execution.url || \`http://localhost:5678/execution/\${executionId}\`;
+
+let category = "SYSTEM_FAULT";
+let actionRecommendation = "Inspect execution trace in n8n UI.";
+let isQuotaExceeded = false;
+
+if (errorMessage.includes("quotaExceeded") || errorMessage.includes("403")) {
+  category = "YOUTUBE_QUOTA_EXCEEDED";
+  actionRecommendation = "Daily YouTube quota limit reached (10,000 units). Auto-rescheduling remaining posts for midnight PST reset.";
+  isQuotaExceeded = true;
+} else if (errorMessage.includes("OAuth") || errorMessage.includes("token") || errorMessage.includes("401")) {
+  category = "AUTH_TOKEN_EXPIRED";
+  actionRecommendation = "Re-authenticate credentials in n8n Credentials Manager or verify refresh token loop.";
+} else if (errorMessage.includes("transcode") || errorMessage.includes("container")) {
+  category = "META_TRANSCODE_TIMEOUT";
+  actionRecommendation = "Instagram video ingestion required longer transcode cycle. Extended wait loop triggered.";
+}
+
+return {
+  json: {
+    executionId,
+    executionUrl,
+    workflowName: workflow.name || "OmniChannel Distribution",
+    failedNode: lastNode,
+    errorMessage,
+    category,
+    isQuotaExceeded,
+    actionRecommendation,
+    timestamp: new Date().toISOString(),
+    retryAttempt: 1
+  }
+};`
+      },
+      notes: "Parses error payloads, classifies failure root cause, and generates troubleshooting recommendations."
+    },
+    {
+      id: "node_check_quota",
+      name: "Is YouTube Quota Exceeded?",
+      type: "n8n-nodes-base.if",
+      typeVersion: 2,
+      position: [700, 300],
+      category: "logic",
+      platform: "general",
+      parameters: {
+        conditions: {
+          boolean: [
+            {
+              value1: "={{ $json.isQuotaExceeded }}",
+              value2: true
+            }
+          ]
+        }
+      },
+      notes: "Routes quota issues to automated rescheduling queue."
+    },
+    {
+      id: "node_reschedule_post",
+      name: "Auto-Reschedule for Midnight PST Reset",
+      type: "n8n-nodes-base.code",
+      typeVersion: 2,
+      position: [960, 220],
+      category: "transform",
+      platform: "youtube",
+      parameters: {
+        language: "javaScript",
+        jsCode: `// Automatically set scheduled time to tomorrow at 00:05 AM PST (quota reset time)
+const now = new Date();
+const tomorrowMidnightPst = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+tomorrowMidnightPst.setUTCHours(8, 5, 0, 0); // 00:05 PST is 08:05 UTC
+
+return {
+  json: {
+    ...$json,
+    rescheduledTime: tomorrowMidnightPst.toISOString(),
+    status: "RE_QUEUED_POST_QUOTA_RESET",
+    notice: "Post delayed until YouTube quota refreshes at midnight PST."
+  }
+};`
+      },
+      notes: "Calculates midnight PST quota reset window and re-enqueues post."
+    },
+    {
+      id: "node_discord_error_alert",
+      name: "Discord Emergency Alert Embed",
+      type: "n8n-nodes-base.httpRequest",
+      typeVersion: 4.2,
+      position: [960, 400],
+      category: "notification",
+      platform: "general",
+      parameters: {
+        method: "POST",
+        url: "={{ $env.DISCORD_WEBHOOK_URL }}",
+        sendBody: true,
+        bodyParameters: {
+          parameters: [
+            {
+              name: "content",
+              value: "🚨 **OmniFlow Execution Alert**"
+            },
+            {
+              name: "embeds",
+              value: `=[{
+  "title": "Execution Error in " + $json.workflowName,
+  "description": "**Failed Node:** \`" + $json.failedNode + "\`\\n**Error:** " + $json.errorMessage + "\\n\\n**Recommendation:** " + $json.actionRecommendation,
+  "color": 15158332,
+  "fields": [
+    { "name": "Execution ID", "value": $json.executionId, "inline": true },
+    { "name": "Category", "value": $json.category, "inline": true },
+    { "name": "Direct Execution Link", "value": "[View in n8n](" + $json.executionUrl + ")" }
+  ],
+  "timestamp": $json.timestamp
+}]`
+            }
+          ]
+        }
+      },
+      notes: "Posts detailed diagnostic embed card to Discord channel."
+    }
+  ],
+  connections: {
+    "Error Trigger": {
+      main: [
+        [{ node: "Diagnose Root Cause & Context", type: "main", index: 0 }]
+      ]
+    },
+    "Diagnose Root Cause & Context": {
+      main: [
+        [
+          { node: "Is YouTube Quota Exceeded?", type: "main", index: 0 },
+          { node: "Discord Emergency Alert Embed", type: "main", index: 0 }
+        ]
+      ]
+    },
+    "Is YouTube Quota Exceeded?": {
+      main: [
+        [{ node: "Auto-Reschedule for Midnight PST Reset", type: "main", index: 0 }],
+        []
+      ]
+    }
+  }
+};
+

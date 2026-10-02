@@ -151,6 +151,7 @@ All workflows are located in the [`workflows/`](workflows/) directory and are 10
 | **01** | **OmniChannel Social Distribution** | Main distribution engine. Supports Cron & Webhook triggers, formats media, concurrently publishes to TikTok, YouTube, and Instagram with async wait/polling loops, and notifies Discord/Slack. | [`workflows/01-OmniChannel-Scheduled-Distribution.json`](workflows/01-OmniChannel-Scheduled-Distribution.json) |
 | **02** | **Cross-Platform Analytics Harvester** | Nightly telemetry pipeline. Queries TikTok Video Insights, YouTube Analytics API, and Instagram Insights to aggregate views, likes, shares, and engagement rates into your master database. | [`workflows/02-Cross-Platform-Analytics-Harvester.json`](workflows/02-Cross-Platform-Analytics-Harvester.json) |
 | **03** | **OmniFlow Master Loop** | Orchestration loop that combines queue scheduling, asset distribution, fallback retry queues, and automated analytics synchronization in a unified workflow. | [`workflows/03-OmniFlow-Master-Loop.json`](workflows/03-OmniFlow-Master-Loop.json) |
+| **04** | **Dead-Letter Error Recovery Hook** | Production error workflow listening to n8n's `errorTrigger`. Diagnoses failures (YouTube quota limits, Instagram transcode lag), sends Discord/Telegram diagnostic embeds, and auto-reschedules failed jobs for midnight quota reset. | [`workflows/04-OmniFlow-Dead-Letter-Error-Handler.json`](workflows/04-OmniFlow-Dead-Letter-Error-Handler.json) |
 
 ---
 

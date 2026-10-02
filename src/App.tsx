@@ -7,7 +7,8 @@ import React, { useState } from 'react';
 import {
   DISTRIBUTION_WORKFLOW,
   ANALYTICS_WORKFLOW,
-  UNIFIED_MASTER_WORKFLOW
+  UNIFIED_MASTER_WORKFLOW,
+  ERROR_HANDLER_WORKFLOW
 } from './data/n8nWorkflows';
 import { N8NWorkflowDefinition, N8NNode, ScheduledPostItem, WorkflowSnapshot } from './types/workflow';
 import { Header } from './components/Header';
@@ -32,6 +33,7 @@ export default function App() {
     wf_omnichannel_distribution_v1: JSON.parse(JSON.stringify(DISTRIBUTION_WORKFLOW)),
     wf_omnichannel_analytics_v1: JSON.parse(JSON.stringify(ANALYTICS_WORKFLOW)),
     wf_omnichannel_master_v1: JSON.parse(JSON.stringify(UNIFIED_MASTER_WORKFLOW)),
+    wf_omnichannel_error_handler_v1: JSON.parse(JSON.stringify(ERROR_HANDLER_WORKFLOW)),
   });
 
   const [currentWorkflowId, setCurrentWorkflowId] = useState<string>(
@@ -79,6 +81,11 @@ export default function App() {
       id: 'wf_omnichannel_master_v1',
       name: 'OmniFlow Master Loop',
       category: 'Full Suite',
+    },
+    {
+      id: 'wf_omnichannel_error_handler_v1',
+      name: 'OmniFlow Dead-Letter & Error Handler',
+      category: 'Resilience',
     },
   ];
 
