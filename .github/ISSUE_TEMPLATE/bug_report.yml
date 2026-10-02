@@ -1,0 +1,54 @@
+name: Bug Report
+description: File a bug report or workflow execution failure
+title: "[BUG]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to fill out this bug report!
+  - type: input
+    id: environment
+    attributes:
+      label: n8n & Node Environment
+      description: What version of n8n, Node.js, and deployment mode (Docker, Desktop, npm) are you using?
+      placeholder: e.g. n8n 1.80.0, Node 20, Docker Desktop on Windows 11
+    validations:
+      required: true
+  - type: dropdown
+    id: platform
+    attributes:
+      label: Affected Social Platform
+      description: Which platform API encountered the issue?
+      options:
+        - TikTok Open API v2
+        - YouTube Data API v3 (Shorts)
+        - Instagram Graph API v21.0 (Reels)
+        - OmniFlow Studio UI / Simulator
+        - General n8n Engine
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: Describe the Bug
+      description: A clear and concise description of what happened.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to Reproduce
+      description: Exact steps to reproduce the error.
+      placeholder: |
+        1. Trigger workflow via webhook
+        2. Media passes validation
+        3. Instagram container polling throws 400 error
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Error Logs or Execution JSON
+      description: Paste relevant node error logs. (Make sure to redact sensitive API tokens!)
+      render: json

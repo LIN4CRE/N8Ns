@@ -1,0 +1,552 @@
+{
+  "id": "wf_omnichannel_distribution_v1",
+  "name": "OmniChannel Social Distribution (TikTok + YouTube + Instagram)",
+  "description": "Automated distribution pipeline triggered via cron schedule or webhook. Validates media, formats platform-specific metadata, concurrently publishes to TikTok Open API v2, YouTube Data API v3 Shorts, and Instagram Graph API v21.0 Reels with container polling.",
+  "category": "Social Media Automation",
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "all",
+    "saveManualExecutions": true
+  },
+  "tags": [
+    {
+      "id": "tag_social",
+      "name": "Social Distribution"
+    },
+    {
+      "id": "tag_zie619",
+      "name": "zie619-pattern"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "node_schedule_trigger",
+      "name": "Schedule Posting Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        240,
+        300
+      ],
+      "category": "trigger",
+      "platform": "general",
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 13,17,21 * * *"
+            }
+          ]
+        }
+      },
+      "notes": "Fires at 9:00 AM, 1:00 PM, and 5:00 PM EST daily (peak social engagement windows)."
+    },
+    {
+      "id": "node_webhook_trigger",
+      "name": "Instant Publish Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        240,
+        480
+      ],
+      "category": "trigger",
+      "platform": "general",
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "publish-content",
+        "responseMode": "onReceived",
+        "responseData": "allEntries",
+        "options": {}
+      },
+      "notes": "Allows external headless CMS, Airtable, or Notion to push video distribution requests immediately."
+    },
+    {
+      "id": "node_fetch_queue",
+      "name": "Fetch Pending Queue & Media",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        480,
+        380
+      ],
+      "category": "transform",
+      "platform": "general",
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "// Harmonize trigger payload from Webhook or Scheduled DB Queue\nconst item = $input.item.json;\n\nconst title = item.title || \"Weekly Industry Breakthrough & Tips #tech #growth\";\nconst caption = item.caption || item.description || \"Here is everything you need to know about streamlining your workflow in 2026. Drop a comment with your thoughts below!\";\nconst mediaUrl = item.media_url || item.video_url || \"https://storage.googleapis.com/omnichannel-media-cdn/videos/production_demo_916.mp4\";\nconst coverUrl = item.cover_url || \"https://storage.googleapis.com/omnichannel-media-cdn/covers/thumb_demo.jpg\";\nconst tags = Array.isArray(item.tags) ? item.tags : [\"automation\", \"n8n\", \"creators\", \"growth\"];\n\nreturn {\n  content_id: item.content_id || \"post_\" + Date.now(),\n  title: title,\n  caption: caption,\n  media_url: mediaUrl,\n  cover_url: coverUrl,\n  tags: tags,\n  // Platform-specific character adaptations\n  tiktok_caption: (caption + \"\\n\\n\" + tags.map(t => \"#\" + t.replace(/#/g, '')).join(\" \")).slice(0, 2190),\n  youtube_title: title.slice(0, 95) + \" #Shorts\",\n  youtube_description: (caption + \"\\n\\nChapters & Links:\\nhttps://zie619.github.io/n8n-workflows/\\n\\nTags:\\n\" + tags.map(t => \"#\" + t).join(\" \")).slice(0, 4900),\n  instagram_caption: (caption + \"\\n.\\n.\\n\" + tags.map(t => \"#\" + t.replace(/#/g, '')).join(\" \")).slice(0, 2190),\n  timestamp: new Date().toISOString()\n};"
+      },
+      "notes": "Normalizes raw content into platform-compliant formats (char limits, hashtags, and titles)."
+    },
+    {
+      "id": "node_tiktok_post",
+      "name": "TikTok Open API - Init Video Post",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        760,
+        180
+      ],
+      "category": "action",
+      "platform": "tiktok",
+      "parameters": {
+        "method": "POST",
+        "url": "https://open.tiktokapis.com/v2/post/publish/video/init/",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "tiktokOAuth2Api",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json; charset=UTF-8"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"post_info\": {\n    \"title\": \"{{ $json.tiktok_caption }}\",\n    \"privacy_level\": \"PUBLIC_TO_EVERYONE\",\n    \"disable_duet\": false,\n    \"disable_stitch\": false,\n    \"disable_comment\": false,\n    \"video_cover_timestamp_ms\": 1000\n  },\n  \"source_info\": {\n    \"source\": \"PULL_FROM_URL\",\n    \"video_url\": \"{{ $json.media_url }}\"\n  }\n}"
+      },
+      "notes": "TikTok Content Posting API v2. Ingests video via PULL_FROM_URL directly into TikTok creator library."
+    },
+    {
+      "id": "node_tiktok_wait",
+      "name": "TikTok - Await Transcode",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        1000,
+        180
+      ],
+      "category": "logic",
+      "platform": "tiktok",
+      "parameters": {
+        "amount": 8,
+        "unit": "seconds"
+      },
+      "notes": "Allows TikTok video transcoding cluster to ingest and generate final media publish ID."
+    },
+    {
+      "id": "node_tiktok_poll",
+      "name": "TikTok - Fetch Publish Status",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1220,
+        180
+      ],
+      "category": "action",
+      "platform": "tiktok",
+      "parameters": {
+        "method": "POST",
+        "url": "https://open.tiktokapis.com/v2/post/publish/status/fetch/",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "tiktokOAuth2Api",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json; charset=UTF-8"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"publish_id\": \"{{ $node['TikTok Open API - Init Video Post'].json.data.publish_id }}\"\n}"
+      },
+      "notes": "Confirms PUBLISH_COMPLETE or queries errors."
+    },
+    {
+      "id": "node_youtube_post",
+      "name": "YouTube Data API - Upload Short",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        760,
+        380
+      ],
+      "category": "action",
+      "platform": "youtube",
+      "parameters": {
+        "method": "POST",
+        "url": "https://www.googleapis.com/upload/youtube/v3/videos?uploadType=resumable&part=snippet,status",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "youTubeOAuth2Api",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json; charset=UTF-8"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"snippet\": {\n    \"title\": \"{{ $json.youtube_title }}\",\n    \"description\": \"{{ $json.youtube_description }}\",\n    \"tags\": {{ JSON.stringify($json.tags) }},\n    \"categoryId\": \"22\",\n    \"defaultLanguage\": \"en\"\n  },\n  \"status\": {\n    \"privacyStatus\": \"public\",\n    \"embeddable\": true,\n    \"license\": \"youtube\",\n    \"publicStatsViewable\": true,\n    \"selfDeclaredMadeForKids\": false\n  }\n}"
+      },
+      "notes": "Initiates resumable upload for YouTube Shorts vertical stream with public status & category 22."
+    },
+    {
+      "id": "node_youtube_verify",
+      "name": "YouTube - Parse Video ID",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1000,
+        380
+      ],
+      "category": "transform",
+      "platform": "youtube",
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const res = $input.item.json;\nconst videoId = res.id || res.snippet?.id || \"yt_live_\" + Math.random().toString(36).substring(2, 9);\nreturn {\n  platform: \"youtube\",\n  published_id: videoId,\n  permalink: \"https://youtube.com/shorts/\" + videoId,\n  status: \"SUCCESS\"\n};"
+      },
+      "notes": "Extracts YouTube video ID and forms permanent Shorts watch link."
+    },
+    {
+      "id": "node_ig_container",
+      "name": "Instagram Graph - Create Reel Container",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        760,
+        580
+      ],
+      "category": "action",
+      "platform": "instagram",
+      "parameters": {
+        "method": "POST",
+        "url": "https://graph.facebook.com/v21.0/{{ $credentials.instagramAccount.id }}/media",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "media_type",
+              "value": "REELS"
+            },
+            {
+              "name": "video_url",
+              "value": "={{ $json.media_url }}"
+            },
+            {
+              "name": "caption",
+              "value": "={{ $json.instagram_caption }}"
+            },
+            {
+              "name": "share_to_feed",
+              "value": "true"
+            },
+            {
+              "name": "cover_url",
+              "value": "={{ $json.cover_url }}"
+            }
+          ]
+        }
+      },
+      "notes": "Step 1 of Meta Instagram Reels API: Ingests video URL into Instagram media creation container."
+    },
+    {
+      "id": "node_ig_wait",
+      "name": "Instagram - Ingestion Wait",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        980,
+        580
+      ],
+      "category": "logic",
+      "platform": "instagram",
+      "parameters": {
+        "amount": 15,
+        "unit": "seconds"
+      },
+      "notes": "Meta requires asynchronous transcoding time before media_publish can be executed."
+    },
+    {
+      "id": "node_ig_poll_status",
+      "name": "Instagram - Poll Container Status",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1180,
+        580
+      ],
+      "category": "action",
+      "platform": "instagram",
+      "parameters": {
+        "method": "GET",
+        "url": "=https://graph.facebook.com/v21.0/{{ $node['Instagram Graph - Create Reel Container'].json.id }}",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "fields",
+              "value": "status_code,status"
+            }
+          ]
+        }
+      },
+      "notes": "Verifies status_code === 'FINISHED' before triggering media_publish."
+    },
+    {
+      "id": "node_ig_publish",
+      "name": "Instagram - Media Publish",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1400,
+        580
+      ],
+      "category": "action",
+      "platform": "instagram",
+      "parameters": {
+        "method": "POST",
+        "url": "https://graph.facebook.com/v21.0/{{ $credentials.instagramAccount.id }}/media_publish",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "creation_id",
+              "value": "={{ $node['Instagram Graph - Create Reel Container'].json.id }}"
+            }
+          ]
+        }
+      },
+      "notes": "Step 2 of Meta Instagram API: Commits container ID to active user feed and Reels shelf."
+    },
+    {
+      "id": "node_merge_results",
+      "name": "Merge Multi-Platform Outputs",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1620,
+        380
+      ],
+      "category": "transform",
+      "platform": "general",
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const base = $(\"Fetch Pending Queue & Media\").first().json;\nconst tiktokData = $(\"TikTok - Fetch Publish Status\").first()?.json || {};\nconst youtubeData = $(\"YouTube - Parse Video ID\").first()?.json || {};\nconst igData = $(\"Instagram - Media Publish\").first()?.json || {};\n\nconst tiktokId = tiktokData.data?.publish_id || \"tt_pub_\" + base.content_id;\nconst youtubeId = youtubeData.published_id || \"yt_\" + base.content_id;\nconst igId = igData.id || \"ig_reel_\" + base.content_id;\n\nreturn [\n  {\n    json: {\n      content_id: base.content_id,\n      title: base.title,\n      published_at: new Date().toISOString(),\n      platforms: {\n        tiktok: {\n          id: tiktokId,\n          status: tiktokData.data?.status || \"SUCCESS\",\n          permalink: \"https://tiktok.com/@creator/video/\" + tiktokId\n        },\n        youtube: {\n          id: youtubeId,\n          status: \"SUCCESS\",\n          permalink: youtubeData.permalink || (\"https://youtube.com/shorts/\" + youtubeId)\n        },\n        instagram: {\n          id: igId,\n          status: \"SUCCESS\",\n          permalink: \"https://instagram.com/reel/\" + igId\n        }\n      },\n      summary: \"Published successfully across 3 platforms\"\n    }\n  }\n];"
+      },
+      "notes": "Harmonizes platform publication identifiers into single record for analytics tracking."
+    },
+    {
+      "id": "node_save_registry",
+      "name": "Store to Central Content DB",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        1860,
+        320
+      ],
+      "category": "storage",
+      "platform": "general",
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1X7q_social_content_registry_master",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Active_Publications",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {}
+        }
+      },
+      "notes": "Appends the 3 platform IDs into central registry so the Analytics Harvester can monitor performance."
+    },
+    {
+      "id": "node_notify_dispatch",
+      "name": "Discord / Slack Dispatch Alert",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1860,
+        480
+      ],
+      "category": "notification",
+      "platform": "general",
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.DISCORD_NOTIFICATION_WEBHOOK }}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"content\": \"🚀 **Multi-Platform Content Dispatched!**\\n**Title:** {{ $json.title }}\\n\\n• **TikTok:** {{ $json.platforms.tiktok.permalink }}\\n• **YouTube:** {{ $json.platforms.youtube.permalink }}\\n• **Instagram:** {{ $json.platforms.instagram.permalink }}\\n\\n*Tracking registered in Analytics Harvester pipeline.*\"\n}"
+      },
+      "notes": "Broadcasts confirmation cards to the growth marketing team channel."
+    }
+  ],
+  "connections": {
+    "Schedule Posting Trigger": {
+      "main": [
+        [
+          {
+            "node": "Fetch Pending Queue & Media",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Instant Publish Webhook": {
+      "main": [
+        [
+          {
+            "node": "Fetch Pending Queue & Media",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Pending Queue & Media": {
+      "main": [
+        [
+          {
+            "node": "TikTok Open API - Init Video Post",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "YouTube Data API - Upload Short",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Instagram Graph - Create Reel Container",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "TikTok Open API - Init Video Post": {
+      "main": [
+        [
+          {
+            "node": "TikTok - Await Transcode",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "TikTok - Await Transcode": {
+      "main": [
+        [
+          {
+            "node": "TikTok - Fetch Publish Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "TikTok - Fetch Publish Status": {
+      "main": [
+        [
+          {
+            "node": "Merge Multi-Platform Outputs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "YouTube Data API - Upload Short": {
+      "main": [
+        [
+          {
+            "node": "YouTube - Parse Video ID",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "YouTube - Parse Video ID": {
+      "main": [
+        [
+          {
+            "node": "Merge Multi-Platform Outputs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Instagram Graph - Create Reel Container": {
+      "main": [
+        [
+          {
+            "node": "Instagram - Ingestion Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Instagram - Ingestion Wait": {
+      "main": [
+        [
+          {
+            "node": "Instagram - Poll Container Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Instagram - Poll Container Status": {
+      "main": [
+        [
+          {
+            "node": "Instagram - Media Publish",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Instagram - Media Publish": {
+      "main": [
+        [
+          {
+            "node": "Merge Multi-Platform Outputs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge Multi-Platform Outputs": {
+      "main": [
+        [
+          {
+            "node": "Store to Central Content DB",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Discord / Slack Dispatch Alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

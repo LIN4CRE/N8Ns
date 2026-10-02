@@ -1,14 +1,16 @@
 {
-  "name": "react-example",
+  "name": "n8n-social-omniflow",
+  "version": "1.0.0",
+  "description": "Automated n8n social video workflow suite and interactive visual studio for TikTok, YouTube Shorts, and Instagram Reels",
   "private": true,
-  "version": "0.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite --port=3000 --host=0.0.0.0",
     "build": "vite build",
     "preview": "vite preview",
-    "clean": "rm -rf dist server.js",
-    "lint": "tsc --noEmit"
+    "clean": "node -e \"import('node:fs').then(fs => fs.rmSync('dist', { recursive: true, force: true }))\"",
+    "lint": "tsc --noEmit",
+    "export:workflows": "tsx scripts/export-workflows.ts"
   },
   "dependencies": {
     "@google/genai": "^2.4.0",
@@ -27,7 +29,7 @@
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "autoprefixer": "^10.4.21",
-    "esbuild": "^0.25.0",
+    "esbuild": "^0.28.0",
     "tailwindcss": "^4.3.3",
     "tsx": "^4.21.0",
     "typescript": "^7.0.2",

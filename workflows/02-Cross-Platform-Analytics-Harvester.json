@@ -1,0 +1,339 @@
+{
+  "id": "wf_omnichannel_analytics_v1",
+  "name": "Cross-Platform Analytics Harvester (TikTok + YT + IG)",
+  "description": "Recurring performance tracking workflow running every 6 hours. Queries TikTok Video Research API, YouTube Data & Analytics API, and Instagram Graph Media Insights. Normalizes views, engagement rates, retention, and syncs to central dashboard with viral breakout alerts.",
+  "category": "Analytics & Telemetry",
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "all",
+    "saveManualExecutions": true
+  },
+  "tags": [
+    {
+      "id": "tag_analytics",
+      "name": "Cross-Platform Analytics"
+    },
+    {
+      "id": "tag_zie619",
+      "name": "zie619-pattern"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "node_analytics_cron",
+      "name": "Recurring 6-Hour Harvester",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        240,
+        360
+      ],
+      "category": "trigger",
+      "platform": "general",
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 */6 * * *"
+            }
+          ]
+        }
+      },
+      "notes": "Executes every 6 hours to capture organic trajectory and virality curves."
+    },
+    {
+      "id": "node_get_tracked_posts",
+      "name": "Query 30-Day Published Registry",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        480,
+        360
+      ],
+      "category": "storage",
+      "platform": "general",
+      "parameters": {
+        "method": "GET",
+        "url": "https://api.yourdatabase.com/v1/posts/active?days=30",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth"
+      },
+      "notes": "Fetches all content entries dispatched within the last 30 days containing platform IDs."
+    },
+    {
+      "id": "node_tiktok_metrics",
+      "name": "TikTok - Video Query Stats",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        760,
+        180
+      ],
+      "category": "action",
+      "platform": "tiktok",
+      "parameters": {
+        "method": "POST",
+        "url": "https://open.tiktokapis.com/v2/video/list/?fields=id,title,view_count,like_count,comment_count,share_count",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "tiktokOAuth2Api",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"filters\": {\n    \"video_ids\": [\"{{ $json.tiktok_id }}\"]\n  }\n}"
+      },
+      "notes": "Retrieves TikTok real-time view_count, like_count, comment_count, and share_count."
+    },
+    {
+      "id": "node_youtube_metrics",
+      "name": "YouTube - Video Statistics API",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        760,
+        360
+      ],
+      "category": "action",
+      "platform": "youtube",
+      "parameters": {
+        "method": "GET",
+        "url": "https://www.googleapis.com/youtube/v3/videos",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "youTubeOAuth2Api",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "part",
+              "value": "statistics,contentDetails"
+            },
+            {
+              "name": "id",
+              "value": "={{ $json.youtube_id }}"
+            }
+          ]
+        }
+      },
+      "notes": "Fetches YouTube viewCount, likeCount, commentCount, and duration."
+    },
+    {
+      "id": "node_instagram_metrics",
+      "name": "Instagram - Media Insights API",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        760,
+        540
+      ],
+      "category": "action",
+      "platform": "instagram",
+      "parameters": {
+        "method": "GET",
+        "url": "=https://graph.facebook.com/v21.0/{{ $json.instagram_id }}/insights",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "metric",
+              "value": "reach,plays,saved,shares,total_interactions,likes,comments"
+            }
+          ]
+        }
+      },
+      "notes": "Meta Graph Insights for Reels: returns reach, plays (views), saves, shares, and interactions."
+    },
+    {
+      "id": "node_analytics_normalizer",
+      "name": "Cross-Platform Normalizer & Scoring Engine",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1100,
+        360
+      ],
+      "category": "transform",
+      "platform": "general",
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// Combine multi-stream inputs into single normalized schema\nconst tracked = $(\"Query 30-Day Published Registry\").first().json;\nconst ttRes = $(\"TikTok - Video Query Stats\").first()?.json?.data?.videos?.[0] || {};\nconst ytRes = $(\"YouTube - Video Statistics API\").first()?.json?.items?.[0]?.statistics || {};\nconst igRes = $(\"Instagram - Media Insights API\").first()?.json?.data || [];\n\n// Instagram insights map\nconst igMetrics = {};\nif (Array.isArray(igRes)) {\n  igRes.forEach(m => {\n    igMetrics[m.name] = m.values?.[0]?.value || m.value || 0;\n  });\n}\n\n// Extracted metrics\nconst tiktok = {\n  views: parseInt(ttRes.view_count || 0, 10),\n  likes: parseInt(ttRes.like_count || 0, 10),\n  comments: parseInt(ttRes.comment_count || 0, 10),\n  shares: parseInt(ttRes.share_count || 0, 10)\n};\n\nconst youtube = {\n  views: parseInt(ytRes.viewCount || 0, 10),\n  likes: parseInt(ytRes.likeCount || 0, 10),\n  comments: parseInt(ytRes.commentCount || 0, 10)\n};\n\nconst instagram = {\n  views: parseInt(igMetrics.plays || igMetrics.impressions || 0, 10),\n  reach: parseInt(igMetrics.reach || 0, 10),\n  likes: parseInt(igMetrics.likes || 0, 10),\n  comments: parseInt(igMetrics.comments || 0, 10),\n  shares: parseInt(igMetrics.shares || 0, 10),\n  saved: parseInt(igMetrics.saved || 0, 10)\n};\n\nconst totalViews = tiktok.views + youtube.views + instagram.views;\nconst totalEngagements = \n  (tiktok.likes + tiktok.comments + tiktok.shares) +\n  (youtube.likes + youtube.comments) +\n  (instagram.likes + instagram.comments + instagram.shares + instagram.saved);\n\nconst engagementRate = totalViews > 0 ? Number(((totalEngagements / totalViews) * 100).toFixed(2)) : 0;\n\n// Determine top performing channel\nlet topPlatform = \"tiktok\";\nlet maxViews = tiktok.views;\nif (youtube.views > maxViews) {\n  topPlatform = \"youtube\";\n  maxViews = youtube.views;\n}\nif (instagram.views > maxViews) {\n  topPlatform = \"instagram\";\n  maxViews = instagram.views;\n}\n\nconst isViral = totalViews >= 15000 || engagementRate >= 7.5;\n\nreturn [\n  {\n    json: {\n      content_id: tracked.content_id || \"post_demo\",\n      title: tracked.title || \"Industry Automation Guide\",\n      recorded_at: new Date().toISOString(),\n      aggregate: {\n        total_views: totalViews,\n        total_engagements: totalEngagements,\n        engagement_rate_pct: engagementRate,\n        top_platform: topPlatform,\n        viral_breakout: isViral\n      },\n      breakdown: {\n        tiktok,\n        youtube,\n        instagram\n      }\n    }\n  }\n];"
+      },
+      "notes": "Computes total cross-channel views, blended engagement rate %, platform leader, and viral flag."
+    },
+    {
+      "id": "node_save_analytics_history",
+      "name": "Append Time-Series Performance Row",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        1380,
+        260
+      ],
+      "category": "storage",
+      "platform": "general",
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1X7q_social_content_registry_master",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Analytics_Snapshots",
+          "mode": "name"
+        }
+      },
+      "notes": "Preserves snapshot data for longitudinal growth curves and weekly reporting."
+    },
+    {
+      "id": "node_check_viral_alert",
+      "name": "Check Viral Breakthrough",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        1380,
+        460
+      ],
+      "category": "logic",
+      "platform": "general",
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ $json.aggregate.viral_breakout }}",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "notes": "Evaluates if post has crossed viral velocity threshold for immediate team alert."
+    },
+    {
+      "id": "node_viral_alert_notification",
+      "name": "Send Viral Breakout Notification",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1640,
+        460
+      ],
+      "category": "notification",
+      "platform": "general",
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.SLACK_OR_DISCORD_WEBHOOK }}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"text\": \"🔥 **VIRAL BREAKOUT ALERT!**\\n**Post:** {{ $json.title }}\\n• Total Views: **{{ $json.aggregate.total_views.toLocaleString() }}**\\n• Engagement Rate: **{{ $json.aggregate.engagement_rate_pct }}%**\\n• Leading Channel: **{{ $json.aggregate.top_platform.toUpperCase() }}**\"\n}"
+      },
+      "notes": "Sends high-priority notification to growth team when a video exceeds engagement targets."
+    }
+  ],
+  "connections": {
+    "Recurring 6-Hour Harvester": {
+      "main": [
+        [
+          {
+            "node": "Query 30-Day Published Registry",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Query 30-Day Published Registry": {
+      "main": [
+        [
+          {
+            "node": "TikTok - Video Query Stats",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "YouTube - Video Statistics API",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Instagram - Media Insights API",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "TikTok - Video Query Stats": {
+      "main": [
+        [
+          {
+            "node": "Cross-Platform Normalizer & Scoring Engine",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "YouTube - Video Statistics API": {
+      "main": [
+        [
+          {
+            "node": "Cross-Platform Normalizer & Scoring Engine",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Instagram - Media Insights API": {
+      "main": [
+        [
+          {
+            "node": "Cross-Platform Normalizer & Scoring Engine",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Cross-Platform Normalizer & Scoring Engine": {
+      "main": [
+        [
+          {
+            "node": "Append Time-Series Performance Row",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Check Viral Breakthrough",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Viral Breakthrough": {
+      "main": [
+        [
+          {
+            "node": "Send Viral Breakout Notification",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    }
+  }
+}
