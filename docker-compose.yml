@@ -16,6 +16,8 @@ services:
       - EXECUTIONS_DATA_MAX_AGE=168
       - N8N_ENCRYPTION_KEY=${N8N_ENCRYPTION_KEY:-n8n-omniflow-secret-key-32-chars-long}
       - N8N_DEFAULT_BINARY_DATA_MODE=filesystem
+      - N8N_MCP_MANAGED_BY_ENV=true
+      - N8N_MCP_ACCESS_ENABLED=true
     volumes:
       - n8n_data:/home/node/.n8n
       - ./workflows:/workflows:ro

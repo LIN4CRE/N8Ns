@@ -177,6 +177,7 @@ Write-Host "  OmniFlow is ready to rock!" -ForegroundColor Green
 Write-Host "  - Visual Studio:   http://localhost:3000" -ForegroundColor White
 Write-Host "  - Cloud Mirror:    https://algebraic-inn-473617-m5.web.app" -ForegroundColor White
 Write-Host "  - n8n Engine:      http://localhost:5678" -ForegroundColor White
+Write-Host "  - n8n MCP Server:  http://localhost:5678/mcp-server/http" -ForegroundColor Cyan
 Write-Host "  - Workflows Dir:   $ProjectRoot\workflows" -ForegroundColor White
 Write-Host "======================================================================" -ForegroundColor Green
 Write-Host ""

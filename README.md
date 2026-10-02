@@ -335,11 +335,54 @@ Configure these in `.env` (refer to [`.env.example`](.env.example)):
 | `N8N_HOST` | n8n instance hostname | `localhost` |
 | `N8N_PORT` | n8n instance port | `5678` |
 | `N8N_ENCRYPTION_KEY` | 32-character key to encrypt n8n credentials | auto-generated |
-| `WEBHOOK_URL` | Root URL for incoming webhooks | `http://localhost:5678/` |
+| `N8N_MCP_MANAGED_BY_ENV` | Manage MCP settings via environment variables | `true` |
+| `N8N_MCP_ACCESS_ENABLED` | Enable instance-level MCP server | `true` |
+| `N8N_MCP_ENDPOINT` | Streamable HTTP endpoint for AI clients | `http://localhost:5678/mcp-server/http` |
 | `TIKTOK_ACCESS_TOKEN` | Bearer token for TikTok Open API | - |
 | `INSTAGRAM_USER_ACCESS_TOKEN` | User/Page token for Meta Graph API | - |
 | `INSTAGRAM_ACCOUNT_ID` | Instagram Professional Account ID | - |
 | `DISCORD_WEBHOOK_URL` | Discord webhook for completion/error alerts | - |
+
+---
+
+## 🤖 AI Agent & MCP Integration (Model Context Protocol)
+
+n8n includes a native, instance-level **Model Context Protocol (MCP)** server that allows AI coding assistants (such as Antigravity, Claude Code, Cursor, Codex, and VS Code) to programmatically inspect, build, test, and execute workflows.
+
+### 1. Zero-Config Docker Enablement
+The bundled `docker-compose.yml` automatically activates the MCP server on container boot:
+```yaml
+environment:
+  - N8N_MCP_MANAGED_BY_ENV=true
+  - N8N_MCP_ACCESS_ENABLED=true
+```
+The MCP server endpoint is immediately accessible at:
+👉 **`http://localhost:5678/mcp-server/http`**
+
+### 2. Pre-configured IDE Support
+This repository includes ready-to-use configuration files:
+- **Cursor**: [`.cursor/mcp.json`](.cursor/mcp.json)
+- **VS Code**: [`.vscode/mcp.json`](.vscode/mcp.json)
+
+```json
+{
+  "mcpServers": {
+    "n8n": {
+      "type": "streamable-http",
+      "url": "http://localhost:5678/mcp-server/http"
+    }
+  }
+}
+```
+
+### 3. Available MCP Tools
+Once connected, AI agents have access to 30+ native tools:
+- **Workflow Operations**: `search_workflows`, `get_workflow_details`, `execute_workflow`, `test_workflow`, `publish_workflow`, `get_workflow_versions_diff`.
+- **Workflow Construction**: `search_nodes`, `get_node_types`, `validate_workflow`, `create_workflow_from_code`, `update_workflow`.
+- **Data & Credentials**: `list_credentials` (security-sanitized), `prepare_workflow_pin_data`, `search_data_tables`.
+
+### 4. Official n8n Agent Skills (`n8n-io/skills`)
+To give your AI coding agent deep knowledge of n8n node schemas, expression syntax, and sub-workflow patterns, pair this repository with [n8n-io/skills](https://github.com/n8n-io/skills).
 
 ---
 
