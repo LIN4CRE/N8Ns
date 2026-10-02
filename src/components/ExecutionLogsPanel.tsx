@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { MOCK_EXECUTION_LOGS } from '../data/mockAnalytics';
 import { ExecutionLogItem } from '../types/workflow';
+import { PlatformExecutionMetrics } from './PlatformExecutionMetrics';
 import {
   ListChecks,
   CheckCircle2,
@@ -91,24 +92,29 @@ export const ExecutionLogsPanel: React.FC<ExecutionLogsPanelProps> = ({ onOpenSi
   };
 
   return (
-    <div className="bg-[#111726] border border-slate-800 rounded-xl overflow-hidden space-y-4">
-      {/* Header & Controls */}
-      <div className="p-5 border-b border-slate-800 space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div>
-            <h3 className="text-base font-bold text-white flex items-center gap-2">
-              <ListChecks className="w-4 h-4 text-rose-400" />
-              <span>Recent Execution Logs (n8n Engine)</span>
-            </h3>
-            <p className="text-xs text-slate-400 mt-0.5">
-              Chronological audit log of automated cron triggers, webhook distributions, API responses, and error traces
-            </p>
-          </div>
+    <div className="space-y-6">
+      {/* Platform Reliability & Execution Time Dashboard */}
+      <PlatformExecutionMetrics logs={logs} />
 
-          <div className="text-xs font-mono text-slate-400">
-            Total Logged Executions: <span className="text-white font-bold">{logs.length}</span>
+      {/* Main Execution Logs Box */}
+      <div className="bg-[#111726] border border-slate-800 rounded-xl overflow-hidden space-y-4">
+        {/* Header & Controls */}
+        <div className="p-5 border-b border-slate-800 space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <h3 className="text-base font-bold text-white flex items-center gap-2">
+                <ListChecks className="w-4 h-4 text-rose-400" />
+                <span>Historical Execution Logs Audit</span>
+              </h3>
+              <p className="text-xs text-slate-400 mt-0.5">
+                Audit log of automated cron triggers, webhook distributions, API responses, and error traces
+              </p>
+            </div>
+
+            <div className="text-xs font-mono text-slate-400">
+              Total Logged Executions: <span className="text-white font-bold">{logs.length}</span>
+            </div>
           </div>
-        </div>
 
         {/* Filters and Search Bar */}
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
@@ -302,5 +308,6 @@ export const ExecutionLogsPanel: React.FC<ExecutionLogsPanelProps> = ({ onOpenSi
         )}
       </div>
     </div>
+  </div>
   );
 };

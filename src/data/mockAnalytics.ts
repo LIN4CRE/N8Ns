@@ -165,11 +165,81 @@ export const MOCK_EXECUTION_LOGS: import('../types/workflow').ExecutionLogItem[]
     durationMs: 2890,
     nodesExecutedCount: 8,
     platforms: [
-      { platform: "tiktok", status: "SUCCESS", httpCode: 200 },
-      { platform: "youtube", status: "SUCCESS", httpCode: 200 },
-      { platform: "instagram", status: "SUCCESS", httpCode: 200 }
+      { platform: "tiktok", status: "SUCCESS", httpCode: 200, message: "12 videos queried" },
+      { platform: "youtube", status: "SUCCESS", httpCode: 200, message: "Video stats updated" },
+      { platform: "instagram", status: "SUCCESS", httpCode: 200, message: "Reels insights updated" }
     ],
     outputPayloadSummary: "Telemetry snapshot stored to sheet row #364. No viral alerts triggered."
+  },
+  {
+    id: "exec_0913",
+    executionId: "#38158",
+    workflowName: "OmniChannel Social Distribution",
+    workflowId: "wf_omnichannel_distribution_v1",
+    triggerType: "Schedule Trigger",
+    status: "SUCCESS",
+    startTime: "Sep 30, 2026 at 5:00:02 PM EST",
+    durationMs: 5120,
+    postTitle: "Why Micro-Hooks Win the Algorithm in 2026",
+    nodesExecutedCount: 14,
+    platforms: [
+      { platform: "tiktok", status: "SUCCESS", id: "tt_7392819283701", httpCode: 200 },
+      { platform: "youtube", status: "SUCCESS", id: "yt_dQw4w9WgX90", httpCode: 200 },
+      { platform: "instagram", status: "SUCCESS", id: "ig_1802938472901", httpCode: 200 }
+    ],
+    outputPayloadSummary: "Distributed to all 3 channels. Active_Publications row appended."
+  },
+  {
+    id: "exec_0912",
+    executionId: "#38150",
+    workflowName: "OmniChannel Social Distribution",
+    workflowId: "wf_omnichannel_distribution_v1",
+    triggerType: "Webhook",
+    status: "SUCCESS",
+    startTime: "Sep 30, 2026 at 1:15:20 PM EST",
+    durationMs: 4430,
+    postTitle: "Automated Resumable Uploads in n8n",
+    nodesExecutedCount: 14,
+    platforms: [
+      { platform: "tiktok", status: "SUCCESS", id: "tt_7392819283699", httpCode: 200 },
+      { platform: "youtube", status: "SUCCESS", id: "yt_dQw4w9WgX88", httpCode: 200 },
+      { platform: "instagram", status: "SUCCESS", id: "ig_1802938472898", httpCode: 200 }
+    ]
+  },
+  {
+    id: "exec_0911",
+    executionId: "#38144",
+    workflowName: "OmniChannel Social Distribution",
+    workflowId: "wf_omnichannel_distribution_v1",
+    triggerType: "Schedule Trigger",
+    status: "WARNING",
+    startTime: "Sep 29, 2026 at 9:00:03 AM EST",
+    durationMs: 6920,
+    postTitle: "Top 5 Node Combinations for Content Creators",
+    nodesExecutedCount: 14,
+    platforms: [
+      { platform: "tiktok", status: "SUCCESS", id: "tt_7392819283685", httpCode: 200 },
+      { platform: "youtube", status: "SUCCESS", id: "yt_dQw4w9WgX77", httpCode: 200 },
+      { platform: "instagram", status: "SUCCESS", id: "ig_1802938472880", httpCode: 200, message: "Poller wait extended 15s", retryAttempt: 1 }
+    ],
+    errorMessage: "Instagram media transcoding required secondary polling verification cycle."
+  },
+  {
+    id: "exec_0910",
+    executionId: "#38138",
+    workflowName: "OmniChannel Social Distribution",
+    workflowId: "wf_omnichannel_distribution_v1",
+    triggerType: "Manual Test",
+    status: "SUCCESS",
+    startTime: "Sep 28, 2026 at 3:30:15 PM EST",
+    durationMs: 4610,
+    postTitle: "Cross-Platform Pipeline Test Run",
+    nodesExecutedCount: 14,
+    platforms: [
+      { platform: "tiktok", status: "SUCCESS", id: "tt_7392819283670", httpCode: 200 },
+      { platform: "youtube", status: "SUCCESS", id: "yt_dQw4w9WgX66", httpCode: 200 },
+      { platform: "instagram", status: "SUCCESS", id: "ig_1802938472870", httpCode: 200 }
+    ]
   }
 ];
 

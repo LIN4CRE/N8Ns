@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { INITIAL_SCHEDULED_POSTS } from '../data/mockAnalytics';
 import { ScheduledPostItem } from '../types/workflow';
+import { BulkScheduleModal } from './BulkScheduleModal';
 import {
   Clock,
   Calendar,
@@ -12,7 +13,8 @@ import {
   Send,
   Webhook,
   Sliders,
-  AlertCircle
+  AlertCircle,
+  FileSpreadsheet
 } from 'lucide-react';
 
 interface WorkflowSchedulerProps {
@@ -24,6 +26,7 @@ export const WorkflowScheduler: React.FC<WorkflowSchedulerProps> = ({ onSimulate
   const [cronPreset, setCronPreset] = useState<'peak' | 'twice' | 'hourly' | 'custom'>('peak');
   const [customCron, setCustomCron] = useState('0 13,17,21 * * *');
   const [copiedWebhook, setCopiedWebhook] = useState(false);
+  const [isBulkModalOpen, setIsBulkModalOpen] = useState(false);
 
   // New post modal / form state
   const [isAdding, setIsAdding] = useState(false);
@@ -39,6 +42,10 @@ export const WorkflowScheduler: React.FC<WorkflowSchedulerProps> = ({ onSimulate
     navigator.clipboard.writeText(webhookEndpoint);
     setCopiedWebhook(true);
     setTimeout(() => setCopiedWebhook(false), 2000);
+  };
+
+  const handleBulkAdd = (newPosts: ScheduledPostItem[]) => {
+    setPosts((prev) => [...newPosts, ...prev]);
   };
 
   const handleAddPost = (e: React.FormEvent) => {
@@ -93,13 +100,23 @@ export const WorkflowScheduler: React.FC<WorkflowSchedulerProps> = ({ onSimulate
           </p>
         </div>
 
-        <button
-          onClick={() => setIsAdding(!isAdding)}
-          className="px-3.5 py-2 text-xs font-semibold text-white bg-rose-600 hover:bg-rose-500 rounded-lg transition-colors flex items-center gap-2 cursor-pointer shadow-sm shadow-rose-950 self-start sm:self-auto"
-        >
-          <Plus className="w-4 h-4" />
-          <span>Queue New Content</span>
-        </button>
+        <div className="flex items-center gap-2 self-start sm:self-auto">
+          <button
+            onClick={() => setIsBulkModalOpen(true)}
+            className="px-3.5 py-2 text-xs font-semibold text-white bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg transition-colors flex items-center gap-2 cursor-pointer shadow-sm"
+          >
+            <FileSpreadsheet className="w-4 h-4 text-emerald-400" />
+            <span>Bulk Import (CSV)</span>
+          </button>
+
+          <button
+            onClick={() => setIsAdding(!isAdding)}
+            className="px-3.5 py-2 text-xs font-semibold text-white bg-rose-600 hover:bg-rose-500 rounded-lg transition-colors flex items-center gap-2 cursor-pointer shadow-sm shadow-rose-950"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Queue New Content</span>
+          </button>
+        </div>
       </div>
 
       {/* Scheduler Configuration Cards */}
@@ -369,6 +386,13 @@ export const WorkflowScheduler: React.FC<WorkflowSchedulerProps> = ({ onSimulate
           ))}
         </div>
       </div>
+
+      {/* Bulk Scheduling Modal */}
+      <BulkScheduleModal
+        isOpen={isBulkModalOpen}
+        onClose={() => setIsBulkModalOpen(false)}
+        onBulkAdd={handleBulkAdd}
+      />
     </div>
   );
 };

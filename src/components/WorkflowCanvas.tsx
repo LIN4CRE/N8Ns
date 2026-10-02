@@ -19,7 +19,8 @@ import {
   Database,
   History,
   Camera,
-  RotateCcw
+  RotateCcw,
+  GitBranch
 } from 'lucide-react';
 
 interface WorkflowCanvasProps {
@@ -100,6 +101,82 @@ export const WorkflowCanvas: React.FC<WorkflowCanvasProps> = ({
     }
     return list;
   }, [nodes, currentWorkflow.connections]);
+
+  // Compute graph dependency map for selected node (upstream ancestors & downstream descendants)
+  const dependencyMap = useMemo(() => {
+    if (!selectedNode) {
+      return {
+        upstream: new Set<string>(),
+        downstream: new Set<string>(),
+        upstreamEdges: new Set<string>(),
+        downstreamEdges: new Set<string>(),
+        hasSelection: false,
+      };
+    }
+
+    const forwardAdj = new Map<string, string[]>();
+    const reverseAdj = new Map<string, string[]>();
+
+    const connections = currentWorkflow.connections;
+    for (const [sourceName, sourceConns] of Object.entries(connections)) {
+      if (sourceConns.main) {
+        sourceConns.main.forEach((branch) => {
+          branch.forEach((targetConn) => {
+            const targetName = targetConn.node;
+            if (!forwardAdj.has(sourceName)) forwardAdj.set(sourceName, []);
+            forwardAdj.get(sourceName)!.push(targetName);
+
+            if (!reverseAdj.has(targetName)) reverseAdj.set(targetName, []);
+            reverseAdj.get(targetName)!.push(sourceName);
+          });
+        });
+      }
+    }
+
+    // Downstream traversal (nodes triggered by selectedNode)
+    const downstream = new Set<string>();
+    const downstreamEdges = new Set<string>();
+    const queueDown = [...(forwardAdj.get(selectedNode.name) || [])];
+    queueDown.forEach((target) => downstreamEdges.add(`${selectedNode.name}->${target}`));
+
+    while (queueDown.length > 0) {
+      const curr = queueDown.shift()!;
+      if (!downstream.has(curr)) {
+        downstream.add(curr);
+        const children = forwardAdj.get(curr) || [];
+        children.forEach((child) => {
+          downstreamEdges.add(`${curr}->${child}`);
+          if (!downstream.has(child)) queueDown.push(child);
+        });
+      }
+    }
+
+    // Upstream traversal (nodes that trigger selectedNode)
+    const upstream = new Set<string>();
+    const upstreamEdges = new Set<string>();
+    const queueUp = [...(reverseAdj.get(selectedNode.name) || [])];
+    queueUp.forEach((parent) => upstreamEdges.add(`${parent}->${selectedNode.name}`));
+
+    while (queueUp.length > 0) {
+      const curr = queueUp.shift()!;
+      if (!upstream.has(curr)) {
+        upstream.add(curr);
+        const parents = reverseAdj.get(curr) || [];
+        parents.forEach((parent) => {
+          upstreamEdges.add(`${parent}->${curr}`);
+          if (!upstream.has(parent)) queueUp.push(parent);
+        });
+      }
+    }
+
+    return {
+      upstream,
+      downstream,
+      upstreamEdges,
+      downstreamEdges,
+      hasSelection: true,
+    };
+  }, [selectedNode, currentWorkflow.connections]);
 
   const handleMouseDown = (e: React.MouseEvent) => {
     if ((e.target as HTMLElement).closest('.workflow-node')) return;
@@ -286,6 +363,40 @@ export const WorkflowCanvas: React.FC<WorkflowCanvasProps> = ({
           backgroundSize: '24px 24px',
         }}
       >
+        {/* Dependency Flow Trace Banner */}
+        {dependencyMap.hasSelection && selectedNode && (
+          <div className="absolute top-4 left-6 right-6 max-w-3xl mx-auto bg-[#0f1422]/95 border border-sky-500/40 backdrop-blur rounded-xl p-3 shadow-2xl z-20 flex items-center justify-between gap-3 animate-in fade-in">
+            <div className="flex items-center gap-3 min-w-0 flex-1">
+              <div className="w-7 h-7 rounded-lg bg-sky-500/10 border border-sky-500/30 flex items-center justify-center text-sky-400 shrink-0">
+                <GitBranch className="w-3.5 h-3.5" />
+              </div>
+              <div className="min-w-0 flex-1 text-xs">
+                <div className="flex items-center gap-2">
+                  <span className="font-semibold text-white truncate">
+                    Flow Dependency Map: <span className="text-sky-300 font-bold">{selectedNode.name}</span>
+                  </span>
+                  <span className="text-[10px] font-mono text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20 shrink-0">
+                    ▲ {dependencyMap.upstream.size} Upstream Triggers
+                  </span>
+                  <span className="text-[10px] font-mono text-sky-400 bg-sky-500/10 px-1.5 py-0.5 rounded border border-sky-500/20 shrink-0">
+                    ▼ {dependencyMap.downstream.size} Downstream Actions
+                  </span>
+                </div>
+                <div className="text-[11px] text-slate-400 truncate mt-0.5 font-mono">
+                  Tracing active path wires: <span className="text-emerald-400">Green = Trigger Sources</span> · <span className="text-sky-400">Blue = Triggered Targets</span>
+                </div>
+              </div>
+            </div>
+
+            <button
+              onClick={() => onSelectNode(null as any)}
+              className="px-2.5 py-1 text-xs font-medium text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700 rounded-lg transition-colors cursor-pointer shrink-0"
+            >
+              Clear Trace
+            </button>
+          </div>
+        )}
+
         <div
           className="absolute origin-top-left transition-transform duration-75"
           style={{
@@ -310,47 +421,67 @@ export const WorkflowCanvas: React.FC<WorkflowCanvasProps> = ({
               const deltaX = Math.max(40, (endX - startX) * 0.5);
 
               const pathD = `M ${startX} ${startY} C ${startX + deltaX} ${startY}, ${endX - deltaX} ${endY}, ${endX} ${endY}`;
+              const edgeKey = `${conn.from.name}->${conn.to.name}`;
+              const isUpstreamEdge = dependencyMap.upstreamEdges.has(edgeKey);
+              const isDownstreamEdge = dependencyMap.downstreamEdges.has(edgeKey);
+              const isActiveEdge = isUpstreamEdge || isDownstreamEdge;
+              const hasSelection = dependencyMap.hasSelection;
+
+              let strokeColor = '#64748b';
+              if (conn.from.platform === 'tiktok') strokeColor = '#06b6d4';
+              else if (conn.from.platform === 'youtube') strokeColor = '#ef4444';
+              else if (conn.from.platform === 'instagram') strokeColor = '#ec4899';
+
+              if (hasSelection) {
+                if (isUpstreamEdge) strokeColor = '#10b981';
+                else if (isDownstreamEdge) strokeColor = '#0284c7';
+              }
 
               return (
                 <g key={`conn-${idx}`}>
+                  {/* Underlay / Glow line */}
                   <path
                     d={pathD}
                     fill="none"
-                    stroke="#1e293b"
-                    strokeWidth="4"
+                    stroke={hasSelection ? (isActiveEdge ? (isUpstreamEdge ? '#065f46' : '#075985') : '#0f172a') : '#1e293b'}
+                    strokeWidth={isActiveEdge ? 6 : 3}
+                    opacity={hasSelection ? (isActiveEdge ? 0.9 : 0.12) : 0.7}
                   />
+                  {/* Active Foreground Wire */}
                   <path
                     d={pathD}
                     fill="none"
-                    stroke={
-                      conn.from.platform === 'tiktok'
-                        ? '#06b6d4'
-                        : conn.from.platform === 'youtube'
-                        ? '#ef4444'
-                        : conn.from.platform === 'instagram'
-                        ? '#ec4899'
-                        : '#64748b'
-                    }
-                    strokeWidth="2"
-                    strokeDasharray="5,4"
-                    className="opacity-75"
+                    stroke={strokeColor}
+                    strokeWidth={hasSelection ? (isActiveEdge ? 3.5 : 1) : 2}
+                    strokeDasharray={hasSelection && isActiveEdge ? '8,4' : '5,4'}
+                    className={hasSelection && isActiveEdge ? 'opacity-100' : hasSelection ? 'opacity-10' : 'opacity-75'}
                   />
                 </g>
               );
             })}
           </svg>
 
-          {/* n8n Node Blocks */}
+          {/* n8n Node Blocks with Dependency Map Highlighting */}
           {nodes.map((node) => {
             const isSelected = selectedNode?.id === node.id;
+            const isUpstream = dependencyMap.upstream.has(node.name);
+            const isDownstream = dependencyMap.downstream.has(node.name);
+            const isInChain = isSelected || isUpstream || isDownstream;
+            const hasSelection = dependencyMap.hasSelection;
+
             const isDimmed =
-              platformFilter !== 'all' &&
-              node.platform !== platformFilter &&
-              node.platform !== 'general';
+              (hasSelection && !isInChain) ||
+              (platformFilter !== 'all' &&
+                node.platform !== platformFilter &&
+                node.platform !== 'general');
 
             let platformBorder = 'border-slate-800 hover:border-slate-700';
             if (isSelected) {
-              platformBorder = 'border-rose-500 ring-2 ring-rose-500/30 shadow-lg shadow-rose-950/40';
+              platformBorder = 'border-rose-500 ring-2 ring-rose-500 shadow-2xl shadow-rose-950/70 scale-[1.03] z-30';
+            } else if (hasSelection && isUpstream) {
+              platformBorder = 'border-emerald-500 ring-2 ring-emerald-500/80 shadow-xl shadow-emerald-950/50 scale-[1.01] z-20';
+            } else if (hasSelection && isDownstream) {
+              platformBorder = 'border-sky-500 ring-2 ring-sky-500/80 shadow-xl shadow-sky-950/50 scale-[1.01] z-20';
             } else if (node.platform === 'tiktok') {
               platformBorder = 'hover:border-[#25F4EE]/60';
             } else if (node.platform === 'youtube') {
@@ -366,14 +497,35 @@ export const WorkflowCanvas: React.FC<WorkflowCanvasProps> = ({
                   e.stopPropagation();
                   onSelectNode(node);
                 }}
-                className={`workflow-node absolute w-[250px] bg-[#111726] rounded-xl border transition-all duration-150 cursor-pointer ${platformBorder} ${
-                  isDimmed ? 'opacity-30' : 'opacity-100 shadow-md'
+                className={`workflow-node absolute w-[250px] bg-[#111726] rounded-xl border transition-all duration-200 cursor-pointer ${platformBorder} ${
+                  isDimmed ? 'opacity-20 filter grayscale scale-95' : 'opacity-100 shadow-md'
                 }`}
                 style={{
                   left: `${node.position[0]}px`,
                   top: `${node.position[1]}px`,
                 }}
               >
+                {/* Visual Dependency Label Tag */}
+                {hasSelection && (
+                  <div className="absolute -top-3 left-3 px-1.5 py-0.5 rounded text-[9px] font-mono font-bold uppercase tracking-wider shadow-sm z-10">
+                    {isSelected && (
+                      <span className="bg-rose-500 text-white px-1.5 py-0.5 rounded">
+                        Active Target
+                      </span>
+                    )}
+                    {isUpstream && (
+                      <span className="bg-emerald-500 text-white px-1.5 py-0.5 rounded">
+                        ▲ Triggers This
+                      </span>
+                    )}
+                    {isDownstream && (
+                      <span className="bg-sky-500 text-white px-1.5 py-0.5 rounded">
+                        ▼ Triggered By This
+                      </span>
+                    )}
+                  </div>
+                )}
+
                 {/* Node Header */}
                 <div className="p-3.5 flex items-start gap-3 border-b border-slate-800/80">
                   <div className="w-8 h-8 rounded-lg bg-slate-900 border border-slate-800 flex items-center justify-center shrink-0">
@@ -401,8 +553,16 @@ export const WorkflowCanvas: React.FC<WorkflowCanvasProps> = ({
                 </div>
 
                 {/* Left/Right Connection Port Bullets */}
-                <div className="absolute -left-1.5 top-1/2 -translate-y-1/2 w-3 h-3 rounded-full bg-slate-700 border-2 border-[#111726]" />
-                <div className="absolute -right-1.5 top-1/2 -translate-y-1/2 w-3 h-3 rounded-full bg-rose-500 border-2 border-[#111726]" />
+                <div
+                  className={`absolute -left-1.5 top-1/2 -translate-y-1/2 w-3 h-3 rounded-full border-2 border-[#111726] ${
+                    isUpstream ? 'bg-emerald-400 ring-2 ring-emerald-500' : 'bg-slate-700'
+                  }`}
+                />
+                <div
+                  className={`absolute -right-1.5 top-1/2 -translate-y-1/2 w-3 h-3 rounded-full border-2 border-[#111726] ${
+                    isDownstream ? 'bg-sky-400 ring-2 ring-sky-500' : 'bg-rose-500'
+                  }`}
+                />
               </div>
             );
           })}
