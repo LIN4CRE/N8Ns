@@ -18,11 +18,14 @@ import { AnalyticsView } from './components/AnalyticsView';
 import { EndpointsReference } from './components/EndpointsReference';
 import { WorkflowScheduler } from './components/WorkflowScheduler';
 import { WorkflowExportModal } from './components/WorkflowExportModal';
+import { EasyModeModal } from './components/EasyModeModal';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<
     'canvas' | 'simulator' | 'analytics' | 'endpoints' | 'scheduler'
   >('canvas');
+
+  const [isEasyModeModalOpen, setIsEasyModeModalOpen] = useState(false);
 
   // Mutable workflows dictionary
   const [workflows, setWorkflows] = useState<Record<string, N8NWorkflowDefinition>>({
@@ -147,6 +150,7 @@ export default function App() {
         setActiveTab={setActiveTab}
         onOpenExport={() => setIsExportModalOpen(true)}
         onOpenSimulator={() => setIsSimulatorModalOpen(true)}
+        onOpenEasyMode={() => setIsEasyModeModalOpen(true)}
       />
 
       {/* Main Content Area */}
@@ -216,6 +220,11 @@ export default function App() {
         isOpen={isExportModalOpen}
         onClose={() => setIsExportModalOpen(false)}
         initialWorkflowId={currentWorkflowId}
+      />
+
+      <EasyModeModal
+        isOpen={isEasyModeModalOpen}
+        onClose={() => setIsEasyModeModalOpen(false)}
       />
     </div>
   );

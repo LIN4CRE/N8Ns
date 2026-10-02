@@ -52,6 +52,34 @@
 
 ---
 
+## ⚡ 1-Click Easy Mode Setup (Fastest Way to Start)
+
+### 🖱️ Option 1: Double-Click Launcher (Windows)
+Simply double-click **`start.bat`** (or run `powershell -ExecutionPolicy Bypass -File setup.ps1`). It automatically:
+1. Verifies your Node.js runtime (auto-installs via winget if missing).
+2. Generates your secure `.env` file with cryptographic encryption keys.
+3. Installs dependencies (`npm install`).
+4. Boots up your local n8n instance and OmniFlow Studio.
+5. Launches your browser to `http://localhost:3000` with the **1-Click Setup Hub** ready!
+
+### 🌐 Option 2: Live Cloud Studio (Zero Download)
+If you want to test, simulate, and configure without running anything locally:
+👉 **[Launch Live Cloud Studio](https://algebraic-inn-473617-m5.web.app)**
+Click the glowing **"⚡ 1-Click Setup"** button in the header to connect your accounts and download your `.env`.
+
+---
+
+## 🔑 Direct Developer Portal Links (Get API Keys in 60s)
+
+| Service | Purpose | Direct 1-Click Portal Link | Free Tier |
+| :--- | :--- | :--- | :--- |
+| **Google Gemini AI** | Auto-generate viral titles, hooks & hashtags | [Google AI Studio (Get Free Key)](https://aistudio.google.com/app/apikey) | **100% Free** (15 RPM) |
+| **YouTube Data API v3** | Upload YouTube Shorts | [1. Enable YouTube Data API](https://console.cloud.google.com/apis/library/youtube.googleapis.com)<br>[2. Create OAuth Credentials](https://console.cloud.google.com/apis/credentials) | **Free Quota** (10,000 units/day) |
+| **TikTok Open API v2** | Direct Video Posting & Analytics | [1. TikTok for Developers Portal](https://developers.tiktok.com/apps)<br>[2. Content Posting API Guide](https://developers.tiktok.com/doc/content-posting-api-get-started) | **Developer Access** |
+| **Meta Instagram Graph** | Reels Publishing & Polling | [1. Meta for Developers Apps](https://developers.facebook.com/apps)<br>[2. Graph API Explorer (Generate Token)](https://developers.facebook.com/tools/explorer) | **Free** |
+
+---
+
 ## 🚀 Key Features
 
 - **Concurrent Multi-Platform Distribution**:

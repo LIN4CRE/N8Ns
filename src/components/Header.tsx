@@ -1,11 +1,12 @@
 import React from 'react';
-import { Download, Play, GitBranch, BarChart2, BookOpen, Clock } from 'lucide-react';
+import { Download, Play, GitBranch, BarChart2, BookOpen, Clock, Zap } from 'lucide-react';
 
 interface HeaderProps {
   activeTab: 'canvas' | 'simulator' | 'analytics' | 'endpoints' | 'scheduler';
   setActiveTab: (tab: 'canvas' | 'simulator' | 'analytics' | 'endpoints' | 'scheduler') => void;
   onOpenExport: () => void;
   onOpenSimulator: () => void;
+  onOpenEasyMode?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -13,6 +14,7 @@ export const Header: React.FC<HeaderProps> = ({
   setActiveTab,
   onOpenExport,
   onOpenSimulator,
+  onOpenEasyMode,
 }) => {
   return (
     <header className="h-16 px-6 border-b border-slate-800 bg-[#0d121c]/90 backdrop-blur sticky top-0 z-30 flex items-center justify-between">
@@ -98,6 +100,16 @@ export const Header: React.FC<HeaderProps> = ({
 
       {/* Zone 3: 1-2 primary actions */}
       <div className="flex items-center gap-3">
+        {onOpenEasyMode && (
+          <button
+            onClick={onOpenEasyMode}
+            className="px-3.5 py-1.5 text-xs font-bold text-amber-300 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/40 rounded-lg transition-all flex items-center gap-1.5 cursor-pointer shadow-sm shadow-amber-950/30 hover:border-amber-400"
+          >
+            <Zap className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+            <span>1-Click Setup</span>
+          </button>
+        )}
+
         <button
           onClick={onOpenSimulator}
           className="px-3.5 py-1.5 text-xs font-semibold text-white bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg transition-colors flex items-center gap-2 cursor-pointer shadow-sm"

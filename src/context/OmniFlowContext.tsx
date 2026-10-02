@@ -11,6 +11,14 @@ export interface OmniFlowConfig {
   n8nWebhookUrl: string;
   n8nBaseUrl: string;
   geminiApiKey: string;
+  youtubeClientId?: string;
+  youtubeClientSecret?: string;
+  youtubeRefreshToken?: string;
+  tiktokClientKey?: string;
+  tiktokAccessToken?: string;
+  instagramAccountId?: string;
+  instagramAccessToken?: string;
+  discordWebhookUrl?: string;
 }
 
 export interface ServicePingResult {
@@ -59,6 +67,14 @@ const DEFAULT_CONFIG: OmniFlowConfig = {
   n8nWebhookUrl: 'http://localhost:5678/webhook/publish-content',
   n8nBaseUrl: 'http://localhost:5678',
   geminiApiKey: typeof process !== 'undefined' && process.env?.GEMINI_API_KEY ? process.env.GEMINI_API_KEY : '',
+  youtubeClientId: typeof process !== 'undefined' && process.env?.GOOGLE_CLIENT_ID ? process.env.GOOGLE_CLIENT_ID : '',
+  youtubeClientSecret: typeof process !== 'undefined' && process.env?.GOOGLE_CLIENT_SECRET ? process.env.GOOGLE_CLIENT_SECRET : '',
+  youtubeRefreshToken: '',
+  tiktokClientKey: '',
+  tiktokAccessToken: '',
+  instagramAccountId: '',
+  instagramAccessToken: '',
+  discordWebhookUrl: '',
 };
 
 const OmniFlowContext = createContext<OmniFlowContextType | undefined>(undefined);
