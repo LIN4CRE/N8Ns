@@ -1,5 +1,5 @@
 @echo off
-title n8n Social OmniFlow - 1-Click Setup & Launcher
+title "n8n Social OmniFlow - 1-Click Setup & Launcher"
 cd /d "%~dp0"
 echo ======================================================================
 echo    Launching n8n Social OmniFlow Easy Mode...
