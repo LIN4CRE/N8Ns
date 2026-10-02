@@ -1,0 +1,6 @@
+{
+  "name": "n8n Social OmniFlow - Content Distribution & Analytics",
+  "description": "Automated n8n workflow suite and interactive studio for TikTok, YouTube, and Instagram scheduled publishing and cross-platform performance analytics.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
