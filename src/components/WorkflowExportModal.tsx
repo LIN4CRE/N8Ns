@@ -3,7 +3,8 @@ import {
   DISTRIBUTION_WORKFLOW,
   ANALYTICS_WORKFLOW,
   UNIFIED_MASTER_WORKFLOW,
-  ERROR_HANDLER_WORKFLOW
+  ERROR_HANDLER_WORKFLOW,
+  CONTENT_FACTORY_WORKFLOW
 } from '../data/n8nWorkflows';
 import { N8NWorkflowDefinition } from '../types/workflow';
 import {
@@ -40,6 +41,8 @@ export const WorkflowExportModal: React.FC<WorkflowExportModalProps> = ({
     currentWf = UNIFIED_MASTER_WORKFLOW;
   } else if (selectedWorkflowId === 'wf_omnichannel_error_handler_v1') {
     currentWf = ERROR_HANDLER_WORKFLOW;
+  } else if (selectedWorkflowId === 'wf_omnichannel_content_factory_v1') {
+    currentWf = CONTENT_FACTORY_WORKFLOW;
   }
 
   const jsonString = JSON.stringify(currentWf, null, 2);
@@ -131,6 +134,16 @@ export const WorkflowExportModal: React.FC<WorkflowExportModalProps> = ({
                 }`}
               >
                 Error Recovery Hook
+              </button>
+              <button
+                onClick={() => setSelectedWorkflowId('wf_omnichannel_content_factory_v1')}
+                className={`px-3 py-1 text-xs rounded transition-colors cursor-pointer ${
+                  selectedWorkflowId === 'wf_omnichannel_content_factory_v1'
+                    ? 'bg-rose-600 text-white font-semibold'
+                    : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                Content Factory (100 Nodes)
               </button>
             </div>
           </div>

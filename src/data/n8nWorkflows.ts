@@ -995,3 +995,25 @@ return {
   }
 };
 
+import CONTENT_FACTORY_RAW from '../../workflows/05-OmniFlow-MultiPlatform-Content-Factory.json';
+
+export const CONTENT_FACTORY_WORKFLOW: N8NWorkflowDefinition = {
+  id: "wf_omnichannel_content_factory_v1",
+  name: "Multi-Platform Content Factory (X + LinkedIn + Facebook + Instagram + Google Drive)",
+  description: "Enterprise 100-node content factory that composes system prompts and schemas from Google Docs, generates AI imagery via Pollinations AI, uploads to ImgBB and Google Drive, sends human-in-the-loop approval emails via Gmail, and broadcasts to X/Twitter, LinkedIn, Facebook, and Instagram.",
+  category: "Content Factory",
+  active: true,
+  settings: (CONTENT_FACTORY_RAW as any).settings || {
+    executionOrder: "v1",
+    saveDataErrorExecution: "all",
+    saveDataSuccessExecution: "all"
+  },
+  tags: [
+    { id: "tag_factory", name: "Content Factory" },
+    { id: "tag_omniflow", name: "omniflow-core" }
+  ],
+  nodes: (CONTENT_FACTORY_RAW as any).nodes || [],
+  connections: (CONTENT_FACTORY_RAW as any).connections || {}
+};
+
+

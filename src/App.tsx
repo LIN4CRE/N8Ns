@@ -8,7 +8,8 @@ import {
   DISTRIBUTION_WORKFLOW,
   ANALYTICS_WORKFLOW,
   UNIFIED_MASTER_WORKFLOW,
-  ERROR_HANDLER_WORKFLOW
+  ERROR_HANDLER_WORKFLOW,
+  CONTENT_FACTORY_WORKFLOW
 } from './data/n8nWorkflows';
 import { N8NWorkflowDefinition, N8NNode, ScheduledPostItem, WorkflowSnapshot } from './types/workflow';
 import { Header } from './components/Header';
@@ -34,6 +35,7 @@ export default function App() {
     wf_omnichannel_analytics_v1: JSON.parse(JSON.stringify(ANALYTICS_WORKFLOW)),
     wf_omnichannel_master_v1: JSON.parse(JSON.stringify(UNIFIED_MASTER_WORKFLOW)),
     wf_omnichannel_error_handler_v1: JSON.parse(JSON.stringify(ERROR_HANDLER_WORKFLOW)),
+    wf_omnichannel_content_factory_v1: JSON.parse(JSON.stringify(CONTENT_FACTORY_WORKFLOW)),
   });
 
   const [currentWorkflowId, setCurrentWorkflowId] = useState<string>(
@@ -86,6 +88,11 @@ export default function App() {
       id: 'wf_omnichannel_error_handler_v1',
       name: 'OmniFlow Dead-Letter & Error Handler',
       category: 'Resilience',
+    },
+    {
+      id: 'wf_omnichannel_content_factory_v1',
+      name: 'Content Factory (100 Nodes: X + LinkedIn + Meta)',
+      category: 'Factory',
     },
   ];
 

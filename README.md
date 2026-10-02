@@ -152,6 +152,7 @@ All workflows are located in the [`workflows/`](workflows/) directory and are 10
 | **02** | **Cross-Platform Analytics Harvester** | Nightly telemetry pipeline. Queries TikTok Video Insights, YouTube Analytics API, and Instagram Insights to aggregate views, likes, shares, and engagement rates into your master database. | [`workflows/02-Cross-Platform-Analytics-Harvester.json`](workflows/02-Cross-Platform-Analytics-Harvester.json) |
 | **03** | **OmniFlow Master Loop** | Orchestration loop that combines queue scheduling, asset distribution, fallback retry queues, and automated analytics synchronization in a unified workflow. | [`workflows/03-OmniFlow-Master-Loop.json`](workflows/03-OmniFlow-Master-Loop.json) |
 | **04** | **Dead-Letter Error Recovery Hook** | Production error workflow listening to n8n's `errorTrigger`. Diagnoses failures (YouTube quota limits, Instagram transcode lag), sends Discord/Telegram diagnostic embeds, and auto-reschedules failed jobs for midnight quota reset. | [`workflows/04-OmniFlow-Dead-Letter-Error-Handler.json`](workflows/04-OmniFlow-Dead-Letter-Error-Handler.json) |
+| **05** | **Multi-Platform Content Factory** | 100-node enterprise content factory integrating dynamic Google Docs prompt composition, Pollinations AI image generation, ImgBB/Google Drive media storage, human-in-the-loop Gmail approval routing, and automated publishing to X/Twitter, LinkedIn, Facebook, and Instagram. | [`workflows/05-OmniFlow-MultiPlatform-Content-Factory.json`](workflows/05-OmniFlow-MultiPlatform-Content-Factory.json) |
 
 ---
 
