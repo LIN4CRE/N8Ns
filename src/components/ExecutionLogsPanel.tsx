@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { MOCK_EXECUTION_LOGS } from '../data/mockAnalytics';
+import { useOmniFlow } from '../context/OmniFlowContext';
 import { ExecutionLogItem } from '../types/workflow';
 import { PlatformExecutionMetrics } from './PlatformExecutionMetrics';
 import {
@@ -16,7 +16,8 @@ import {
   Terminal,
   ExternalLink,
   Layers,
-  Filter
+  Filter,
+  Trash2
 } from 'lucide-react';
 
 interface ExecutionLogsPanelProps {
@@ -24,7 +25,7 @@ interface ExecutionLogsPanelProps {
 }
 
 export const ExecutionLogsPanel: React.FC<ExecutionLogsPanelProps> = ({ onOpenSimulatorForLog }) => {
-  const [logs, setLogs] = useState<ExecutionLogItem[]>(MOCK_EXECUTION_LOGS);
+  const { logs, clearExecutionLogs } = useOmniFlow();
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'SUCCESS' | 'WARNING' | 'ERROR'>('ALL');
   const [triggerFilter, setTriggerFilter] = useState<string>('ALL');
   const [search, setSearch] = useState('');
@@ -111,8 +112,20 @@ export const ExecutionLogsPanel: React.FC<ExecutionLogsPanelProps> = ({ onOpenSi
               </p>
             </div>
 
-            <div className="text-xs font-mono text-slate-400">
-              Total Logged Executions: <span className="text-white font-bold">{logs.length}</span>
+            <div className="flex items-center gap-3">
+              <div className="text-xs font-mono text-slate-400">
+                Total Logged Executions: <span className="text-white font-bold">{logs.length}</span>
+              </div>
+              {logs.length > 0 && (
+                <button
+                  onClick={clearExecutionLogs}
+                  className="px-2.5 py-1 text-xs text-slate-400 hover:text-rose-400 bg-slate-900 border border-slate-800 rounded flex items-center gap-1 cursor-pointer"
+                  title="Wipe audit log"
+                >
+                  <Trash2 className="w-3 h-3" />
+                  <span>Clear Logs</span>
+                </button>
+              )}
             </div>
           </div>
 

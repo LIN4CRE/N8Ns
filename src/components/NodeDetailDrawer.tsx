@@ -61,7 +61,7 @@ export const NodeDetailDrawer: React.FC<NodeDetailDrawerProps> = ({
     const params = node.parameters || {};
     if (node.type.includes('httpRequest')) {
       const method = params.method || 'GET';
-      const url = params.url || 'https://api.example.com';
+      const url = params.url || 'https://open.tiktokapis.com/v2/post/publish/video/init/';
       let cmd = `curl -X ${method} "${url}" \\\n  -H "Authorization: Bearer $ACCESS_TOKEN"`;
       if (params.headerParameters?.parameters) {
         params.headerParameters.parameters.forEach((h: any) => {

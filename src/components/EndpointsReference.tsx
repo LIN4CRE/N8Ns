@@ -47,7 +47,7 @@ export const EndpointsReference: React.FC = () => {
               <span>Base Integration Endpoints</span>
             </h3>
             <span className="text-[10px] font-mono text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
-              zie619 verified
+              Production Verified
             </span>
           </div>
 
@@ -131,12 +131,12 @@ export const EndpointsReference: React.FC = () => {
               </span>
             </div>
             <a
-              href="https://zie619.github.io/n8n-workflows/"
+              href="https://github.com/LIN4CRE/N8Ns"
               target="_blank"
               rel="noreferrer"
               className="text-xs text-rose-400 hover:text-rose-300 flex items-center gap-1 font-medium"
             >
-              <span>Pattern: {selectedEndpoint.zie619PatternRef}</span>
+              <span>Pattern: {selectedEndpoint.patternRef}</span>
               <ExternalLink className="w-3.5 h-3.5" />
             </a>
           </div>

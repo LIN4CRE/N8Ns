@@ -14,7 +14,7 @@ export const DISTRIBUTION_WORKFLOW: N8NWorkflowDefinition = {
   },
   tags: [
     { id: "tag_social", name: "Social Distribution" },
-    { id: "tag_zie619", name: "zie619-pattern" }
+    { id: "tag_omniflow", name: "omniflow-core" }
   ],
   nodes: [
     {
@@ -67,11 +67,14 @@ export const DISTRIBUTION_WORKFLOW: N8NWorkflowDefinition = {
         jsCode: `// Harmonize trigger payload from Webhook or Scheduled DB Queue
 const item = $input.item.json;
 
-const title = item.title || "Weekly Industry Breakthrough & Tips #tech #growth";
-const caption = item.caption || item.description || "Here is everything you need to know about streamlining your workflow in 2026. Drop a comment with your thoughts below!";
-const mediaUrl = item.media_url || item.video_url || "https://storage.googleapis.com/omnichannel-media-cdn/videos/production_demo_916.mp4";
-const coverUrl = item.cover_url || "https://storage.googleapis.com/omnichannel-media-cdn/covers/thumb_demo.jpg";
-const tags = Array.isArray(item.tags) ? item.tags : ["automation", "n8n", "creators", "growth"];
+const title = item.title || "OmniChannel Distribution Post";
+const caption = item.caption || item.description || "";
+const mediaUrl = item.media_url || item.video_url;
+if (!mediaUrl) {
+  throw new Error("Missing 'media_url' or 'video_url' in execution payload.");
+}
+const coverUrl = item.cover_url || "";
+const tags = Array.isArray(item.tags) ? item.tags : [];
 
 return {
   content_id: item.content_id || "post_" + Date.now(),
@@ -83,7 +86,7 @@ return {
   // Platform-specific character adaptations
   tiktok_caption: (caption + "\\n\\n" + tags.map(t => "#" + t.replace(/#/g, '')).join(" ")).slice(0, 2190),
   youtube_title: title.slice(0, 95) + " #Shorts",
-  youtube_description: (caption + "\\n\\nChapters & Links:\\nhttps://zie619.github.io/n8n-workflows/\\n\\nTags:\\n" + tags.map(t => "#" + t).join(" ")).slice(0, 4900),
+  youtube_description: (caption + "\\n\\nTags:\\n" + tags.map(t => "#" + t).join(" ")).slice(0, 4900),
   instagram_caption: (caption + "\\n.\\n.\\n" + tags.map(t => "#" + t.replace(/#/g, '')).join(" ")).slice(0, 2190),
   timestamp: new Date().toISOString()
 };`
@@ -474,7 +477,7 @@ export const ANALYTICS_WORKFLOW: N8NWorkflowDefinition = {
   },
   tags: [
     { id: "tag_analytics", name: "Cross-Platform Analytics" },
-    { id: "tag_zie619", name: "zie619-pattern" }
+    { id: "tag_omniflow", name: "omniflow-core" }
   ],
   nodes: [
     {

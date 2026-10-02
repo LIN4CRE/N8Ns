@@ -5,8 +5,8 @@ export const INITIAL_SCHEDULED_POSTS: ScheduledPostItem[] = [
     id: "post_001",
     title: "How to Build Autonomous n8n AI Agents in 10 Minutes",
     caption: "Stop doing manual copy-pasting between tools. Here is how n8n orchestrates TikTok, YouTube Shorts, and Instagram Reels autonomously.",
-    mediaUrl: "https://storage.googleapis.com/omnichannel-media-cdn/videos/ai_agents_mastery_916.mp4",
-    coverUrl: "https://storage.googleapis.com/omnichannel-media-cdn/covers/thumb_001.jpg",
+    mediaUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4",
+    coverUrl: "",
     tags: ["n8n", "automation", "tech", "productivity", "growth"],
     scheduledTime: "Today at 1:00 PM EST",
     status: "PUBLISHED",
@@ -21,8 +21,8 @@ export const INITIAL_SCHEDULED_POSTS: ScheduledPostItem[] = [
     id: "post_002",
     title: "3 API Secrets Every Growth Engineer Should Know",
     caption: "Using OAuth2 refresh loops and webhook status callbacks will save you 100+ hours of troubleshooting broken tokens.",
-    mediaUrl: "https://storage.googleapis.com/omnichannel-media-cdn/videos/api_secrets_2026.mp4",
-    coverUrl: "https://storage.googleapis.com/omnichannel-media-cdn/covers/thumb_002.jpg",
+    mediaUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4",
+    coverUrl: "",
     tags: ["software", "engineering", "coding", "devops"],
     scheduledTime: "Yesterday at 5:00 PM EST",
     status: "PUBLISHED",
@@ -37,8 +37,8 @@ export const INITIAL_SCHEDULED_POSTS: ScheduledPostItem[] = [
     id: "post_003",
     title: "Zero to 100k Followers: The Cross-Platform Strategy",
     caption: "The secret is never posting manually. One source video resized to 9:16 automatically formatted with platform-tailored hooks.",
-    mediaUrl: "https://storage.googleapis.com/omnichannel-media-cdn/videos/growth_blueprint_2026.mp4",
-    coverUrl: "https://storage.googleapis.com/omnichannel-media-cdn/covers/thumb_003.jpg",
+    mediaUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4",
+    coverUrl: "",
     tags: ["contentstrategy", "socialmedia", "creators", "scale"],
     scheduledTime: "Tomorrow at 9:00 AM EST",
     status: "SCHEDULED",
@@ -48,8 +48,8 @@ export const INITIAL_SCHEDULED_POSTS: ScheduledPostItem[] = [
     id: "post_004",
     title: "Setting Up Meta Graph API v21 Container Polling in n8n",
     caption: "Full breakdown of creation_id wait loops in n8n using HTTP request and If nodes.",
-    mediaUrl: "https://storage.googleapis.com/omnichannel-media-cdn/videos/meta_graph_walkthrough.mp4",
-    coverUrl: "https://storage.googleapis.com/omnichannel-media-cdn/covers/thumb_004.jpg",
+    mediaUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4",
+    coverUrl: "",
     tags: ["metagraph", "tutorials", "n8nworkflows", "developer"],
     scheduledTime: "In 2 days at 1:00 PM EST",
     status: "SCHEDULED",
@@ -77,7 +77,7 @@ export const RETENTION_COMPARISON = [
   { interval: "60s", tiktok: 34, youtube: 47, instagram: 31 }
 ];
 
-export const MOCK_EXECUTION_LOGS: import('../types/workflow').ExecutionLogItem[] = [
+export const DEFAULT_EXECUTION_LOGS: import('../types/workflow').ExecutionLogItem[] = [
   {
     id: "exec_0918",
     executionId: "#38194",
@@ -242,6 +242,8 @@ export const MOCK_EXECUTION_LOGS: import('../types/workflow').ExecutionLogItem[]
     ]
   }
 ];
+
+export const MOCK_EXECUTION_LOGS = DEFAULT_EXECUTION_LOGS;
 
 export const API_RATE_LIMITS: import('../types/workflow').ApiRateLimitStatus[] = [
   {

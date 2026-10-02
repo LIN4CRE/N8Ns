@@ -40,7 +40,7 @@ export default function App() {
   const [snapshots, setSnapshots] = useState<WorkflowSnapshot[]>([
     {
       id: 'snap_baseline_01',
-      name: 'v1.0 - Production Baseline (zie619)',
+      name: 'v1.0 - Production Baseline',
       timestamp: 'Today at 9:00 AM EST',
       note: 'Initial verified distribution pipeline with 8s TikTok wait and Meta Reels container polling.',
       workflow: JSON.parse(JSON.stringify(DISTRIBUTION_WORKFLOW)),

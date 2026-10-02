@@ -80,7 +80,7 @@ export interface ApiEndpointDoc {
   sampleResponse: Record<string, any>;
   n8nNodeEquivalent: string;
   n8nCodeSnippet: string;
-  zie619PatternRef: string;
+  patternRef: string;
 }
 
 export interface SimulationStep {
@@ -107,7 +107,7 @@ export interface ExecutionLogItem {
   executionId: string;
   workflowName: string;
   workflowId: string;
-  triggerType: 'Schedule Trigger' | 'Webhook' | 'Manual Test';
+  triggerType: 'Schedule Trigger' | 'Webhook' | 'Manual Test' | 'Live Webhook Dispatch';
   status: 'SUCCESS' | 'WARNING' | 'ERROR';
   startTime: string;
   durationMs: number;

@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import {
-  INITIAL_SCHEDULED_POSTS,
   HOURLY_PERFORMANCE_HEATMAP,
   RETENTION_COMPARISON
 } from '../data/mockAnalytics';
+import { useOmniFlow } from '../context/OmniFlowContext';
 import { ApiHealthDashboard } from './ApiHealthDashboard';
 import { ExecutionLogsPanel } from './ExecutionLogsPanel';
 import {
@@ -26,12 +26,12 @@ import {
 } from 'lucide-react';
 
 export const AnalyticsView: React.FC = () => {
+  const { posts, updatePost } = useOmniFlow();
   const [activeSubTab, setActiveSubTab] = useState<'performance' | 'api-health' | 'execution-logs'>('performance');
-  const [posts, setPosts] = useState(INITIAL_SCHEDULED_POSTS);
   const [selectedPostId, setSelectedPostId] = useState<string>('post_001');
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  const selectedPost = posts.find((p) => p.id === selectedPostId) || posts[0];
+  const selectedPost = posts.find((p) => p.id === selectedPostId) || posts[0] || null;
 
   // Calculate aggregates
   const publishedPosts = posts.filter((p) => p.status === 'PUBLISHED');
@@ -72,32 +72,29 @@ export const AnalyticsView: React.FC = () => {
   const handleRefreshHarvester = () => {
     setIsRefreshing(true);
     setTimeout(() => {
-      // Simulate new views increment
-      setPosts((prev) =>
-        prev.map((p) => {
-          if (p.status !== 'PUBLISHED' || !p.metrics) return p;
-          return {
-            ...p,
-            metrics: {
-              tiktok: {
-                ...p.metrics.tiktok!,
-                views: p.metrics.tiktok!.views + Math.floor(Math.random() * 450 + 50),
-                likes: p.metrics.tiktok!.likes + Math.floor(Math.random() * 40 + 5),
-              },
-              youtube: {
-                ...p.metrics.youtube!,
-                views: p.metrics.youtube!.views + Math.floor(Math.random() * 600 + 80),
-                likes: p.metrics.youtube!.likes + Math.floor(Math.random() * 60 + 8),
-              },
-              instagram: {
-                ...p.metrics.instagram!,
-                views: p.metrics.instagram!.views + Math.floor(Math.random() * 300 + 40),
-                likes: p.metrics.instagram!.likes + Math.floor(Math.random() * 30 + 4),
-              },
+      // Refresh metrics for published items
+      publishedPosts.forEach((p) => {
+        if (!p.metrics) return;
+        updatePost(p.id, {
+          metrics: {
+            tiktok: {
+              ...p.metrics.tiktok!,
+              views: (p.metrics.tiktok?.views || 0) + Math.floor(Math.random() * 450 + 50),
+              likes: (p.metrics.tiktok?.likes || 0) + Math.floor(Math.random() * 40 + 5),
             },
-          };
-        })
-      );
+            youtube: {
+              ...p.metrics.youtube!,
+              views: (p.metrics.youtube?.views || 0) + Math.floor(Math.random() * 600 + 80),
+              likes: (p.metrics.youtube?.likes || 0) + Math.floor(Math.random() * 60 + 8),
+            },
+            instagram: {
+              ...p.metrics.instagram!,
+              views: (p.metrics.instagram?.views || 0) + Math.floor(Math.random() * 300 + 40),
+              likes: (p.metrics.instagram?.likes || 0) + Math.floor(Math.random() * 30 + 4),
+            },
+          },
+        });
+      });
       setIsRefreshing(false);
     }, 900);
   };

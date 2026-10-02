@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { SimulationStep } from '../types/workflow';
+import { useOmniFlow } from '../context/OmniFlowContext';
 import {
   Play,
   CheckCircle2,
@@ -12,7 +13,9 @@ import {
   ChevronRight,
   Database,
   FileCode,
-  Check
+  Check,
+  Zap,
+  Radio
 } from 'lucide-react';
 
 interface SimulatorModalProps {
@@ -21,18 +24,20 @@ interface SimulatorModalProps {
 }
 
 export const SimulatorModal: React.FC<SimulatorModalProps> = ({ isOpen, onClose }) => {
+  const { dispatchLiveWebhook, config } = useOmniFlow();
   const [selectedWorkflow, setSelectedWorkflow] = useState<'distribution' | 'analytics'>('distribution');
+  const [executionMode, setExecutionMode] = useState<'simulated' | 'live_webhook'>('simulated');
   const [isRunning, setIsRunning] = useState(false);
   const [currentStepIndex, setCurrentStepIndex] = useState(-1);
   const [steps, setSteps] = useState<SimulationStep[]>([]);
   const [finalReport, setFinalReport] = useState<any>(null);
 
   // Form Inputs
-  const [title, setTitle] = useState('Top 3 n8n Automation Hacks to 10x Content Distribution');
+  const [title, setTitle] = useState('How to Build Autonomous n8n AI Agents in 10 Minutes');
   const [caption, setCaption] = useState(
-    'Never publish videos manually again. In this workflow, n8n ingests 1 source file and schedules it across TikTok, YouTube Shorts, and Instagram Reels with full analytics tracking.'
+    'Stop manual copy-pasting between tools. Here is how n8n orchestrates TikTok, YouTube Shorts, and Instagram Reels autonomously.'
   );
-  const [mediaUrl, setMediaUrl] = useState('https://storage.googleapis.com/omnichannel-media-cdn/videos/n8n_demo_short_916.mp4');
+  const [mediaUrl, setMediaUrl] = useState('https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4');
   const [selectedPlatforms, setSelectedPlatforms] = useState({
     tiktok: true,
     youtube: true,
@@ -199,13 +204,13 @@ export const SimulatorModal: React.FC<SimulatorModalProps> = ({ isOpen, onClose 
     setIsRunning(false);
     if (selectedWorkflow === 'distribution') {
       setFinalReport({
-        content_id: 'post_live_' + Date.now().toString().slice(-6),
-        status: 'DISPATCHED_SUCCESSFULLY',
+        content_id: 'post_sim_' + Date.now().toString().slice(-6),
+        status: 'SIMULATED_PIPELINE_COMPLETE',
         published_at: new Date().toISOString(),
         platforms: {
-          tiktok: { id: 'tt_7392819283719', status: 'PUBLISHED', url: 'https://tiktok.com/@creator/video/7392819283719' },
-          youtube: { id: 'yt_dQw4w9WgX01', status: 'PUBLISHED', url: 'https://youtube.com/shorts/dQw4w9WgX01' },
-          instagram: { id: 'ig_1802938472910', status: 'PUBLISHED', url: 'https://instagram.com/reel/1802938472910' },
+          tiktok: { id: 'tt_' + Date.now().toString().slice(-8), status: 'PUBLISHED', message: 'Passed moderation' },
+          youtube: { id: 'yt_shorts_' + Date.now().toString().slice(-6), status: 'PUBLISHED', message: 'Category 22 applied' },
+          instagram: { id: 'ig_' + Date.now().toString().slice(-8), status: 'PUBLISHED', message: 'Container published' },
         },
       });
     } else {
@@ -220,6 +225,37 @@ export const SimulatorModal: React.FC<SimulatorModalProps> = ({ isOpen, onClose 
     }
   };
 
+  const handleDispatchLiveWebhook = async () => {
+    setIsRunning(true);
+    setFinalReport(null);
+    try {
+      const res = await dispatchLiveWebhook({
+        id: 'post_live_' + Date.now(),
+        title,
+        caption,
+        mediaUrl,
+        tags: ['n8n', 'automation', 'omniflow'],
+        scheduledTime: 'Immediate',
+        status: 'PUBLISHING',
+        platforms: Object.entries(selectedPlatforms)
+          .filter(([_, v]) => v)
+          .map(([k]) => k as 'tiktok' | 'youtube' | 'instagram'),
+      });
+
+      setFinalReport({
+        mode: 'LIVE_N8N_WEBHOOK_EXECUTION',
+        webhook_target: config.n8nWebhookUrl,
+        success: res.success,
+        http_status: res.status,
+        latency_ms: res.durationMs,
+        message: res.message,
+        payload_received: res.data || null,
+      });
+    } finally {
+      setIsRunning(false);
+    }
+  };
+
   return (
     <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
       <div className="w-full max-w-4xl bg-[#0f1422] border border-slate-800 rounded-2xl shadow-2xl flex flex-col max-h-[92vh] overflow-hidden">
@@ -230,9 +266,9 @@ export const SimulatorModal: React.FC<SimulatorModalProps> = ({ isOpen, onClose 
               <Play className="w-4 h-4 fill-emerald-400" />
             </div>
             <div>
-              <h3 className="text-base font-bold text-white">n8n Execution Simulator</h3>
+              <h3 className="text-base font-bold text-white">n8n Execution Studio & Simulator</h3>
               <p className="text-xs text-slate-400">
-                Test and step through cross-platform API calls with realistic telemetry
+                Execute live webhooks or step through pipeline dry-runs with real telemetry
               </p>
             </div>
           </div>
@@ -244,51 +280,82 @@ export const SimulatorModal: React.FC<SimulatorModalProps> = ({ isOpen, onClose 
           </button>
         </div>
 
-        {/* Workflow Mode Tabs */}
-        <div className="px-6 py-3 border-b border-slate-800 bg-slate-900/60 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-slate-400 font-medium">Select Pipeline:</span>
-            <div className="flex items-center bg-slate-950 p-1 rounded-lg border border-slate-800">
+        {/* Workflow Mode Tabs & Action Buttons */}
+        <div className="px-6 py-3 border-b border-slate-800 bg-slate-900/60 flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-4 flex-wrap">
+            {/* Execution Engine Selector */}
+            <div className="flex items-center gap-1.5 bg-slate-950 p-1 rounded-lg border border-slate-800">
               <button
                 disabled={isRunning}
-                onClick={() => {
-                  setSelectedWorkflow('distribution');
-                  setSteps([]);
-                  setFinalReport(null);
-                }}
-                className={`px-3 py-1 text-xs rounded transition-colors cursor-pointer ${
-                  selectedWorkflow === 'distribution'
+                onClick={() => setExecutionMode('simulated')}
+                className={`px-3 py-1 text-xs rounded transition-colors cursor-pointer flex items-center gap-1.5 ${
+                  executionMode === 'simulated'
                     ? 'bg-rose-600 text-white font-semibold'
                     : 'text-slate-400 hover:text-white'
                 }`}
               >
-                Scheduled Distribution Flow
+                <Radio className="w-3 h-3" />
+                <span>Dry-Run Simulation</span>
               </button>
               <button
                 disabled={isRunning}
-                onClick={() => {
-                  setSelectedWorkflow('analytics');
-                  setSteps([]);
-                  setFinalReport(null);
-                }}
-                className={`px-3 py-1 text-xs rounded transition-colors cursor-pointer ${
-                  selectedWorkflow === 'analytics'
-                    ? 'bg-rose-600 text-white font-semibold'
+                onClick={() => setExecutionMode('live_webhook')}
+                className={`px-3 py-1 text-xs rounded transition-colors cursor-pointer flex items-center gap-1.5 ${
+                  executionMode === 'live_webhook'
+                    ? 'bg-emerald-600 text-white font-semibold'
                     : 'text-slate-400 hover:text-white'
                 }`}
               >
-                6-Hour Analytics Harvester
+                <Zap className="w-3 h-3 text-amber-300" />
+                <span>Live n8n Webhook</span>
               </button>
             </div>
+
+            {executionMode === 'simulated' && (
+              <div className="flex items-center bg-slate-950 p-1 rounded-lg border border-slate-800">
+                <button
+                  disabled={isRunning}
+                  onClick={() => {
+                    setSelectedWorkflow('distribution');
+                    setSteps([]);
+                    setFinalReport(null);
+                  }}
+                  className={`px-3 py-1 text-xs rounded transition-colors cursor-pointer ${
+                    selectedWorkflow === 'distribution'
+                      ? 'bg-slate-800 text-white font-semibold'
+                      : 'text-slate-400 hover:text-white'
+                  }`}
+                >
+                  Distribution
+                </button>
+                <button
+                  disabled={isRunning}
+                  onClick={() => {
+                    setSelectedWorkflow('analytics');
+                    setSteps([]);
+                    setFinalReport(null);
+                  }}
+                  className={`px-3 py-1 text-xs rounded transition-colors cursor-pointer ${
+                    selectedWorkflow === 'analytics'
+                      ? 'bg-slate-800 text-white font-semibold'
+                      : 'text-slate-400 hover:text-white'
+                  }`}
+                >
+                  Harvester
+                </button>
+              </div>
+            )}
           </div>
 
           <button
-            onClick={handleStartSimulation}
+            onClick={executionMode === 'live_webhook' ? handleDispatchLiveWebhook : handleStartSimulation}
             disabled={isRunning}
             className={`px-4 py-1.5 text-xs font-semibold rounded-lg flex items-center gap-2 cursor-pointer transition-all ${
               isRunning
                 ? 'bg-slate-700 text-slate-400 cursor-not-allowed'
-                : 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-md shadow-emerald-950'
+                : executionMode === 'live_webhook'
+                ? 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-md shadow-emerald-950'
+                : 'bg-rose-600 hover:bg-rose-500 text-white shadow-md shadow-rose-950'
             }`}
           >
             {isRunning ? (
@@ -296,10 +363,15 @@ export const SimulatorModal: React.FC<SimulatorModalProps> = ({ isOpen, onClose 
                 <RefreshCw className="w-3.5 h-3.5 animate-spin" />
                 <span>Executing Pipeline...</span>
               </>
+            ) : executionMode === 'live_webhook' ? (
+              <>
+                <Zap className="w-3.5 h-3.5 text-amber-300 fill-amber-300" />
+                <span>Fire Live Webhook to n8n</span>
+              </>
             ) : (
               <>
                 <Play className="w-3.5 h-3.5 fill-white" />
-                <span>Run Test Execution</span>
+                <span>Run Step Simulation</span>
               </>
             )}
           </button>
@@ -429,7 +501,7 @@ export const SimulatorModal: React.FC<SimulatorModalProps> = ({ isOpen, onClose 
         {/* Footer */}
         <div className="h-14 px-6 border-t border-slate-800 bg-slate-900/90 flex items-center justify-between shrink-0">
           <span className="text-xs text-slate-400">
-            Base logic conformant to zie619.github.io/n8n-workflows architecture.
+            Base logic conformant to n8n Social OmniFlow production architecture.
           </span>
           <button
             onClick={onClose}

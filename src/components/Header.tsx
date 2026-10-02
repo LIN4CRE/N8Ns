@@ -92,7 +92,7 @@ export const Header: React.FC<HeaderProps> = ({
           }`}
         >
           <BookOpen className="w-3.5 h-3.5" />
-          <span>API Specs (zie619)</span>
+          <span>API Specs & Endpoints</span>
         </button>
       </nav>
 

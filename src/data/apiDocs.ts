@@ -24,7 +24,7 @@ export const API_ENDPOINTS_DOCS: ApiEndpointDoc[] = [
       },
       source_info: {
         source: "PULL_FROM_URL",
-        video_url: "https://cdn.yourdomain.com/videos/batch_2026_091.mp4"
+        video_url: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4"
       }
     },
     sampleResponse: {
@@ -56,7 +56,7 @@ return {
     }
   }
 };`,
-    zie619PatternRef: 'zie619.github.io/n8n-workflows -> "tiktok-direct-video-publisher"'
+    patternRef: 'OmniFlow Core -> "tiktok-direct-video-publisher"'
   },
   {
     platform: 'TikTok',
@@ -90,7 +90,7 @@ if (status === 'PUBLISH_COMPLETE') {
   return { status: 'SUCCESS', post_id: $input.item.json.data.publicaly_available_post_id?.[0] };
 }
 throw new Error('TikTok Publish not ready: ' + status);`,
-    zie619PatternRef: 'zie619.github.io/n8n-workflows -> "tiktok-polling-webhook-verifier"'
+    patternRef: 'OmniFlow Core -> "tiktok-polling-webhook-verifier"'
   },
   {
     platform: 'TikTok',
@@ -132,7 +132,7 @@ return {
   comments: vid.comment_count || 0,
   shares: vid.share_count || 0
 };`,
-    zie619PatternRef: 'zie619.github.io/n8n-workflows -> "tiktok-analytics-query-tracker"'
+    patternRef: 'OmniFlow Core -> "tiktok-analytics-query-tracker"'
   },
   {
     platform: 'YouTube',
@@ -149,7 +149,7 @@ return {
     sampleRequest: {
       snippet: {
         title: "Automate Everything with n8n #Shorts",
-        description: "Watch how you can publish to 3 platforms concurrently using n8n workflows.\\n\\nLinks: https://zie619.github.io/n8n-workflows/",
+        description: "Watch how you can publish to 3 platforms concurrently using n8n workflows.\\n\\nGitHub: https://github.com/LIN4CRE/N8Ns",
         tags: ["n8n", "automation", "shorts", "tech"],
         categoryId: "22"
       },
@@ -187,7 +187,7 @@ return {
     }
   }
 };`,
-    zie619PatternRef: 'zie619.github.io/n8n-workflows -> "youtube-shorts-resumable-publisher"'
+    patternRef: 'OmniFlow Core -> "youtube-shorts-resumable-publisher"'
   },
   {
     platform: 'YouTube',
@@ -223,7 +223,7 @@ return {
   likes: parseInt(stats.likeCount || 0, 10),
   comments: parseInt(stats.commentCount || 0, 10)
 };`,
-    zie619PatternRef: 'zie619.github.io/n8n-workflows -> "youtube-video-metrics-aggregator"'
+    patternRef: 'OmniFlow Core -> "youtube-video-metrics-aggregator"'
   },
   {
     platform: 'Instagram',
@@ -238,10 +238,10 @@ return {
     },
     sampleRequest: {
       media_type: "REELS",
-      video_url: "https://cdn.yourdomain.com/videos/batch_2026_091.mp4",
+      video_url: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4",
       caption: "Streamline your distribution pipeline today! 🚀 #automation #instagramreels",
       share_to_feed: true,
-      cover_url: "https://cdn.yourdomain.com/covers/thumb_091.jpg"
+      cover_url: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=1080&q=80"
     },
     sampleResponse: {
       id: "17940294829103948"
@@ -256,7 +256,7 @@ return {
     { name: "share_to_feed", value: "true" }
   ]
 };`,
-    zie619PatternRef: 'zie619.github.io/n8n-workflows -> "instagram-reels-container-creator"'
+    patternRef: 'OmniFlow Core -> "instagram-reels-container-creator"'
   },
   {
     platform: 'Instagram',
@@ -281,7 +281,7 @@ return {
   url: "https://graph.facebook.com/v21.0/" + $credentials.instagram.id + "/media_publish",
   query: { creation_id: $node['Instagram Graph - Create Reel Container'].json.id }
 };`,
-    zie619PatternRef: 'zie619.github.io/n8n-workflows -> "instagram-reels-publisher-step2"'
+    patternRef: 'OmniFlow Core -> "instagram-reels-publisher-step2"'
   },
   {
     platform: 'Instagram',
@@ -319,6 +319,6 @@ return {
   shares: metrics.shares || 0,
   saved: metrics.saved || 0
 };`,
-    zie619PatternRef: 'zie619.github.io/n8n-workflows -> "instagram-insights-reels-tracker"'
+    patternRef: 'OmniFlow Core -> "instagram-insights-reels-tracker"'
   }
 ];
