@@ -15,6 +15,7 @@
   <a href="https://vitejs.dev/"><img src="https://img.shields.io/badge/Vite-8.x-646CFF?style=for-the-badge&logo=vite&logoColor=white" alt="Vite" /></a>
   <a href="https://tailwindcss.com/"><img src="https://img.shields.io/badge/Tailwind_CSS-v4.0-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white" alt="Tailwind CSS" /></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-Apache--2.0-F59E0B?style=for-the-badge" alt="License" /></a>
+  <a href="https://algebraic-inn-473617-m5.web.app"><img src="https://img.shields.io/badge/Live_Demo-algebraic--inn--473617--m5.web.app-4285F4?style=for-the-badge&logo=firebase&logoColor=white" alt="Live Demo" /></a>
   <a href="https://github.com/LIN4CRE/N8Ns/pulls"><img src="https://img.shields.io/badge/PRs-Welcome-22C55E?style=for-the-badge" alt="PRs Welcome" /></a>
 </p>
 
